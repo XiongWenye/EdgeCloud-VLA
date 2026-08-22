@@ -16,6 +16,7 @@ set -euo pipefail
 export PROJECT_ROOT=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA
 export HF_HOME="$PROJECT_ROOT/cache/huggingface"
 export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
+export LIBERO_CONFIG_PATH="$PROJECT_ROOT/configs/libero"
 export MUJOCO_GL=egl
 export PYTHONNOUSERSITE=1
 source "$PROJECT_ROOT/.venv/bin/activate"

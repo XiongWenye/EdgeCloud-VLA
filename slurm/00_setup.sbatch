@@ -18,6 +18,7 @@ export ENV_PREFIX="$PROJECT_ROOT/.venv"
 export LEROBOT_ROOT="$PROJECT_ROOT/third_party/lerobot"
 export HF_HOME="$PROJECT_ROOT/cache/huggingface"
 export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
+export LIBERO_CONFIG_PATH="$PROJECT_ROOT/configs/libero"
 export PIP_CACHE_DIR="$PROJECT_ROOT/cache/pip"
 export PYTHONNOUSERSITE=1
 export TOKENIZERS_PARALLELISM=false
@@ -57,8 +58,19 @@ snapshot_download(
     repo_type="dataset",
     revision="a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4",
 )
+snapshot_download(
+    "lerobot/libero-assets",
+    repo_type="dataset",
+    revision="0b3ea86be5fe169d0fd036ae63d1070ec09e90f6",
+    local_dir="/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/cache/libero/assets",
+)
 print("ARTIFACT_DOWNLOAD_SUCCESS=true")
 PY
+
+LIBERO_SITE_ASSETS="$ENV_PREFIX/lib/python3.10/site-packages/libero/libero/assets"
+if [[ ! -e "$LIBERO_SITE_ASSETS" ]]; then
+    ln -s "$PROJECT_ROOT/cache/libero/assets" "$LIBERO_SITE_ASSETS"
+fi
 
 python "$PROJECT_ROOT/scripts/static_validate.py"
 python - <<'PY'
