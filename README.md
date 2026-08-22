@@ -29,17 +29,24 @@ From `/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA`:
 setup_job=$(sbatch --parsable slurm/00_setup.sbatch)
 bootstrap_job=$(sbatch --parsable --dependency=afterok:$setup_job slurm/01_bootstrap.sbatch)
 smoke_job=$(sbatch --parsable --dependency=afterok:$bootstrap_job slurm/02_smoke.sbatch)
-train_job=$(sbatch --parsable --dependency=afterok:$smoke_job slurm/03_train.sbatch)
-baseline_job=$(sbatch --parsable --dependency=afterok:$bootstrap_job slurm/05_eval_pi05_baseline.sbatch)
+eval_smoke_job=$(sbatch --parsable --dependency=afterok:$smoke_job slurm/02_eval_smoke.sbatch)
+train_job=$(sbatch --parsable --dependency=afterok:$eval_smoke_job slurm/03_train.sbatch)
+baseline_job=$(sbatch --parsable --dependency=afterok:$eval_smoke_job slurm/05_eval_pi05_baseline.sbatch)
 cloudedge_job=$(sbatch --parsable --dependency=afterok:$train_job slurm/04_eval_cloudedge.sbatch)
+aggregate_job=$(sbatch --parsable \
+  --dependency=afterok:${baseline_job}_\*:${cloudedge_job}_\* \
+  slurm/06_aggregate.sbatch)
+upload_job=$(sbatch --parsable --dependency=afterok:$aggregate_job slurm/06_upload.sbatch)
 ```
 
-After both evaluation arrays finish:
+To re-aggregate manually after both evaluation arrays finish:
 
 ```bash
 source .venv/bin/activate
-python scripts/aggregate_results.py results/raw --output results/summary.csv
-MODEL_REPO=wxiong/pi05-cloudedge-libero sbatch slurm/06_upload.sbatch
+python scripts/aggregate_results.py results/raw \
+  --output results/summary.csv \
+  --markdown-output results/summary.md \
+  --validate-paper-grid
 ```
 
 The 120k job checkpoints every 5k updates and requeues five minutes before the 12-hour wall time. It resumes from `checkpoints/last`.
@@ -47,4 +54,3 @@ The 120k job checkpoints every 5k updates and requeues five minutes before the 1
 ## What is and is not reproduced
 
 The code reproduces paired episode-safe frames, fresh/stale dual supervision, current edge vision, nonblocking cloud-context/edge-action APIs, uniform-delay closed-loop evaluation, and the paper's suite/trial/seed grid. It does not claim that π0.5 numbers should equal the paper's OpenVLA-OFT numbers. The changed backbone, flow objective, 50-step π0.5 action horizon, and disclosed assumptions make this a new experimental result.
-
