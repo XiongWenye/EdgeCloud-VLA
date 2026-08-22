@@ -4,6 +4,7 @@ cache/
 logs/
 outputs/
 results/raw/
+results/smoke/
 results/aborted_*/
 third_party/
 tmp/
