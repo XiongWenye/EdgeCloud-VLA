@@ -264,13 +264,19 @@ class CloudEdgePI05Policy(PI05Policy):
         stale_images, stale_masks = super()._preprocess_images(stale_batch)
         return current_images, current_masks, stale_images, stale_masks, delay
 
-    def _inference_image_views(self, batch: dict[str, Tensor]):
+    def _record_inference_observation(self, batch: dict[str, Tensor]) -> None:
         current_raw = {
             key: batch[key].detach().clone()
             for key in self.config.image_features
             if key in batch
         }
         self._observation_history.append(current_raw)
+
+    def _inference_image_views(
+        self, batch: dict[str, Tensor], *, record_observation: bool = True
+    ):
+        if record_observation:
+            self._record_inference_observation(batch)
         if self.config.eval_delay_max == 0:
             delay = 0
         else:
@@ -342,9 +348,32 @@ class CloudEdgePI05Policy(PI05Policy):
         return per_sample.mean(), output
 
     @torch.no_grad()
-    def predict_action_chunk(self, batch: dict[str, Tensor], **kwargs) -> Tensor:
+    def select_action(self, batch: dict[str, Tensor]) -> Tensor:
+        """Execute an action chunk while retaining one observation per environment step."""
+        assert not self._rtc_enabled(), (
+            "RTC is not supported for select_action, use it with predict_action_chunk"
+        )
         self.eval()
-        current_images, current_masks, stale_images, stale_masks, _ = self._inference_image_views(batch)
+
+        # The evaluator calls select_action at every environment step. Record every
+        # observation even while executing a queued action chunk so eval_delay_max
+        # remains measured in environment steps, not action chunks.
+        self._record_inference_observation(batch)
+        if len(self._action_queue) == 0:
+            actions = self.predict_action_chunk(batch, record_observation=False)[
+                :, : self.config.n_action_steps
+            ]
+            self._action_queue.extend(actions.transpose(0, 1))
+        return self._action_queue.popleft()
+
+    @torch.no_grad()
+    def predict_action_chunk(
+        self, batch: dict[str, Tensor], *, record_observation: bool = True, **kwargs
+    ) -> Tensor:
+        self.eval()
+        current_images, current_masks, stale_images, stale_masks, _ = self._inference_image_views(
+            batch, record_observation=record_observation
+        )
         tokens = batch[OBS_LANGUAGE_TOKENS]
         masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
         edge_context = self.model.encode_edge_images(current_images, current_masks)
