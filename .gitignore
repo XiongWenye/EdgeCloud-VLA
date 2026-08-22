@@ -8,4 +8,4 @@ third_party/
 tmp/
 __pycache__/
 *.pyc
-
+*.egg-info/
