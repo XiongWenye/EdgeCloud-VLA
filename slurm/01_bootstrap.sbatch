@@ -18,6 +18,17 @@ export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
 export PYTHONNOUSERSITE=1
 source "$PROJECT_ROOT/.venv/bin/activate"
 
+nvidia-smi --query-gpu=index,name,uuid,memory.total --format=csv,noheader
+python - <<'PY'
+import torch
+
+assert torch.cuda.is_available(), "CUDA is not available inside the allocated SLURM job"
+print(f"cuda_device_count={torch.cuda.device_count()}")
+print(f"cuda_device_name={torch.cuda.get_device_name(0)}")
+torch.ones(1, device="cuda")
+print("CUDA_PREFLIGHT_SUCCESS=true")
+PY
+
 python "$PROJECT_ROOT/scripts/bootstrap_checkpoint.py" \
   --base=lerobot/pi05_libero_base \
   --base-revision=a217bfd3b14673cf2ce597e69997ab21866438dd \
@@ -28,4 +39,3 @@ python "$PROJECT_ROOT/scripts/bootstrap_checkpoint.py" \
   --history-window=21 \
   --lambda-max=0.5 \
   --warmup-steps=10000
-
