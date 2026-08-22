@@ -56,7 +56,11 @@ def main():
     config.output_features = base.config.output_features
     policy = CloudEdgePI05Policy(config)
     missing, unexpected = policy.load_state_dict(base.state_dict(), strict=False)
-    expected_prefixes = ("model.edge_vision.", "model.edge_projection.")
+    expected_prefixes = (
+        "model.edge_vision.",
+        "model.edge_projection.",
+        "model.cloudedge_train_step",
+    )
     bad_missing = [key for key in missing if not key.startswith(expected_prefixes)]
     if bad_missing or unexpected:
         raise RuntimeError(f"Bad base transfer: missing={bad_missing}, unexpected={unexpected}")
