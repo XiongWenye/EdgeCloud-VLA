@@ -26,7 +26,7 @@ source "$PROJECT_ROOT/.venv/bin/activate"
 SUITES=(libero_spatial libero_object libero_goal libero_10)
 suite=${SUITES[$SLURM_ARRAY_TASK_ID]}
 CHECKPOINT="$PROJECT_ROOT/artifacts/pi05_libero_finetuned_v044_reference"
-OUT="$PROJECT_ROOT/results/diagnostics/d0_finetuned_v044_${suite}_s7"
+OUT="$PROJECT_ROOT/results/diagnostics/d0_finetuned_v044_nocompile_${suite}_s7"
 
 test -s "$CHECKPOINT/model.safetensors"
 test "$(stat -c %s "$CHECKPOINT/model.safetensors")" -eq 7473096344
@@ -34,6 +34,7 @@ test "$(stat -c %s "$CHECKPOINT/model.safetensors")" -eq 7473096344
 lerobot-eval \
   --policy.path="$CHECKPOINT" \
   --policy.device=cuda \
+  --policy.compile_model=false \
   --policy.n_action_steps=10 \
   --env.type=libero \
   --env.task="$suite" \
