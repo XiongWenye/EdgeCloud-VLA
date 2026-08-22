@@ -2,12 +2,12 @@
 #SBATCH --job-name=pi05_delay_eval
 #SBATCH --output=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/eval_pi05_%A_%a.out
 #SBATCH --error=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/eval_pi05_%A_%a.err
-#SBATCH --partition=kempner
+#SBATCH --partition=kempner_h200
 #SBATCH --account=kempner_ydu_lab
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=12
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:nvidia_h200:1
 #SBATCH --mem=96G
 #SBATCH --time=24:00:00
 #SBATCH --array=0-15
@@ -19,6 +19,8 @@ export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
 export LIBERO_CONFIG_PATH="$PROJECT_ROOT/configs/libero"
 export MUJOCO_GL=egl
 export PYTHONNOUSERSITE=1
+export TOKENIZERS_PARALLELISM=false
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 source "$PROJECT_ROOT/.venv/bin/activate"
 
 DELAYS=(0 10 20 40)
@@ -39,7 +41,7 @@ lerobot-eval \
   --env.control_mode=relative \
   --env.init_states=true \
   --env.max_parallel_tasks=1 \
-  --eval.batch_size=5 \
+  --eval.batch_size=10 \
   --eval.n_episodes=50 \
   --seed=7 \
   --output_dir="$OUT"

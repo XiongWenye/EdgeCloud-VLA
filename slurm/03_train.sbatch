@@ -2,14 +2,14 @@
 #SBATCH --job-name=cepi05_120k
 #SBATCH --output=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/train_%j.out
 #SBATCH --error=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/train_%j.err
-#SBATCH --partition=kempner
+#SBATCH --partition=kempner_h200
 #SBATCH --account=kempner_ydu_lab
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:nvidia_h200:4
 #SBATCH --mem=192G
-#SBATCH --time=12:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --requeue
 #SBATCH --signal=B:USR1@300
 
@@ -47,7 +47,7 @@ else
       --policy.dtype=bfloat16 \
       --policy.freeze_vision_encoder=true \
       --policy.train_expert_only=false \
-      --policy.gradient_checkpointing=true \
+      --policy.gradient_checkpointing=false \
       --policy.compile_model=false \
       --policy.push_to_hub=false \
       --dataset.repo_id=lerobot/libero \
@@ -70,4 +70,3 @@ wait "$TRAIN_PID"
 
 test -s "$RUN_DIR/checkpoints/120000/pretrained_model/model.safetensors"
 echo "TRAINING_SUCCESS=true"
-
