@@ -46,12 +46,8 @@ python "$PROJECT_ROOT/scripts/bootstrap_checkpoint.py" \
   --history-window=21 \
   --lambda-max=0.5 \
   --warmup-steps=10000
-cp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_preprocessor_step_2_normalizer_processor.safetensors" 
-  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_preprocessor_step_3_normalizer_processor.safetensors"
-cp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors" 
-  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"
-cmp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_preprocessor_step_2_normalizer_processor.safetensors" 
-  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_preprocessor_step_3_normalizer_processor.safetensors"
-cmp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors" 
-  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"
+cp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_preprocessor_step_2_normalizer_processor.safetensors"  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_preprocessor_step_3_normalizer_processor.safetensors"
+cp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"
+cmp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_preprocessor_step_2_normalizer_processor.safetensors"  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_preprocessor_step_3_normalizer_processor.safetensors"
+cmp "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"  "/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/cloudedge_pi05_finetuned_v044_reference/policy_postprocessor_step_0_unnormalizer_processor.safetensors"
 echo "BOOTSTRAP_FINETUNED_REFERENCE_SUCCESS=true"

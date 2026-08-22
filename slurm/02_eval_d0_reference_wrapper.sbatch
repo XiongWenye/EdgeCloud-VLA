@@ -35,8 +35,7 @@ lerobot-eval \
   --policy.path="$CHECKPOINT" \
   --policy.device=cuda \
   --policy.eval_delay_max=0 \
-  --policy.use_edge_vision=false 
-  --policy.compile_model=false \
+  --policy.use_edge_vision=false  --policy.compile_model=false \
   --policy.n_action_steps=10 \
   --env.type=libero \
   --env.task="$suite" \
