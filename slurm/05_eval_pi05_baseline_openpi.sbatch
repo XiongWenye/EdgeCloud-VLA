@@ -33,8 +33,6 @@ OUT="$PROJECT_ROOT/results/raw_openpi_h5/pi05_d${delay}_${suite}_s7"
 lerobot-eval \
   --policy.path="$CHECKPOINT" \
   --policy.device=cuda \
-  --policy.eval_delay_max="$delay" \
-  --policy.use_edge_vision=false \
   --policy.n_action_steps=5 \
   --env.type=libero \
   --env.task="$suite" \
