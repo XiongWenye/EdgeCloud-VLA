@@ -3,9 +3,10 @@
 
 import argparse
 import dataclasses
+import json
 from pathlib import Path
 
-from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata
+import torch
 from lerobot.policies.pi05.modeling_pi05 import PI05Policy
 
 from lerobot_policy_cloudedge_pi05.configuration_cloudedge_pi05 import CloudEdgePI05Config
@@ -19,9 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="lerobot/pi05_libero_base")
     parser.add_argument("--base-revision", default="a217bfd3b14673cf2ce597e69997ab21866438dd")
-    parser.add_argument("--dataset", default="lerobot/libero")
-    parser.add_argument("--dataset-revision", default="a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4")
-    parser.add_argument("--dataset-root", default=None)
+    parser.add_argument("--norm-stats", type=Path, required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--history-window", type=int, default=21)
@@ -30,15 +29,25 @@ def parse_args():
     return parser.parse_args()
 
 
+def load_openpi_norm_stats(path: Path) -> dict[str, dict[str, torch.Tensor]]:
+    source = json.loads(path.read_text())["norm_stats"]
+    mapping = {"state": "observation.state", "actions": "action"}
+    return {
+        mapping[feature]: {
+            name: torch.tensor(values, dtype=torch.float32)
+            for name, values in statistics.items()
+        }
+        for feature, statistics in source.items()
+    }
+
+
 def main():
     args = parse_args()
     output = Path(args.output)
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite {output}")
 
-    metadata = LeRobotDatasetMetadata(
-        args.dataset, root=args.dataset_root, revision=args.dataset_revision
-    )
+    dataset_stats = load_openpi_norm_stats(args.norm_stats)
     base = PI05Policy.from_pretrained(args.base, revision=args.base_revision)
     valid_fields = {field.name for field in dataclasses.fields(CloudEdgePI05Config)}
     init = {key: getattr(base.config, key) for key in valid_fields if hasattr(base.config, key)}
@@ -66,7 +75,7 @@ def main():
         raise RuntimeError(f"Bad base transfer: missing={bad_missing}, unexpected={unexpected}")
 
     preprocessor, postprocessor = make_cloudedge_pi05_pre_post_processors(
-        config, dataset_stats=metadata.stats
+        config, dataset_stats=dataset_stats
     )
     output.mkdir(parents=True)
     policy.save_pretrained(output)

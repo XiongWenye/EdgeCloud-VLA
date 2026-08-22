@@ -42,7 +42,7 @@ if [[ -f "$LAST_CONFIG" ]]; then
       --config_path="$LAST_CONFIG" --resume=true &
 else
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
-      --policy.path="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap" \
+      --policy.path="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_openpi_norm" \
       --policy.device=cuda \
       --policy.dtype=bfloat16 \
       --policy.freeze_vision_encoder=true \

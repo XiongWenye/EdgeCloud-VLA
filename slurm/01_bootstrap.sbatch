@@ -18,6 +18,14 @@ export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
 export PYTHONNOUSERSITE=1
 source "$PROJECT_ROOT/.venv/bin/activate"
 
+NORM_STATS="$PROJECT_ROOT/artifacts/openpi_pi05_libero_norm_stats.json"
+mkdir -p "$PROJECT_ROOT/artifacts"
+curl -L --fail --retry 5 --silent --show-error \
+  -o "$NORM_STATS" \
+  "https://storage.googleapis.com/openpi-assets/checkpoints/pi05_libero/assets/physical-intelligence/libero/norm_stats.json"
+echo "b3a44bb2810436fb62917decaea58bd4d9110255df527dea21e8fd40c960bd84  $NORM_STATS" \
+  | sha256sum --check --strict
+
 nvidia-smi --query-gpu=index,name,uuid,memory.total --format=csv,noheader
 python - <<'PY'
 import torch
@@ -32,9 +40,8 @@ PY
 python "$PROJECT_ROOT/scripts/bootstrap_checkpoint.py" \
   --base=lerobot/pi05_libero_base \
   --base-revision=a217bfd3b14673cf2ce597e69997ab21866438dd \
-  --dataset=lerobot/libero \
-  --dataset-revision=a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4 \
-  --output="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap" \
+  --norm-stats="$NORM_STATS" \
+  --output="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_openpi_norm" \
   --device=cuda \
   --history-window=21 \
   --lambda-max=0.5 \
