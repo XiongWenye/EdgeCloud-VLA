@@ -1,0 +1,11 @@
+.venv/
+artifacts/
+cache/
+logs/
+outputs/
+results/raw/
+third_party/
+tmp/
+__pycache__/
+*.pyc
+
