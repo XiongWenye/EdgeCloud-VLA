@@ -20,8 +20,8 @@ source "$PROJECT_ROOT/.venv/bin/activate"
 
 CHECKPOINT="$PROJECT_ROOT/outputs/cloudedge_pi05_libero_120k/checkpoints/120000/pretrained_model"
 test -s "$CHECKPOINT/model.safetensors"
-test -s "$PROJECT_ROOT/results/summary_h10.md"
-python - "$PROJECT_ROOT/model_card.md" "$PROJECT_ROOT/results/summary_h10.md" "$CHECKPOINT/README.md" <<'PY'
+test -s "$PROJECT_ROOT/results/summary_h10_openpi_norm.md"
+python - "$PROJECT_ROOT/model_card.md" "$PROJECT_ROOT/results/summary_h10_openpi_norm.md" "$CHECKPOINT/README.md" <<'PY'
 import sys
 from pathlib import Path
 

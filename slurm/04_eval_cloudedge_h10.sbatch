@@ -30,7 +30,7 @@ delay=${DELAYS[$((SLURM_ARRAY_TASK_ID % 4))]}
 suite=${SUITES[$(((SLURM_ARRAY_TASK_ID / 4) % 4))]}
 seed=${SEEDS[$((SLURM_ARRAY_TASK_ID / 16))]}
 CHECKPOINT="$PROJECT_ROOT/outputs/cloudedge_pi05_libero_120k/checkpoints/120000/pretrained_model"
-OUT="$PROJECT_ROOT/results/raw_h10/cloudedge_d${delay}_${suite}_s${seed}"
+OUT="$PROJECT_ROOT/results/raw_h10_openpi_norm/cloudedge_d${delay}_${suite}_s${seed}"
 
 lerobot-eval \
   --policy.path="$CHECKPOINT" \

@@ -27,8 +27,8 @@ DELAYS=(0 10 20 40)
 SUITES=(libero_spatial libero_object libero_goal libero_10)
 delay=${DELAYS[$((SLURM_ARRAY_TASK_ID % 4))]}
 suite=${SUITES[$((SLURM_ARRAY_TASK_ID / 4))]}
-CHECKPOINT="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap"
-OUT="$PROJECT_ROOT/results/raw_h10/pi05_d${delay}_${suite}_s7"
+CHECKPOINT="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_openpi_norm"
+OUT="$PROJECT_ROOT/results/raw_h10_openpi_norm/pi05_d${delay}_${suite}_s7"
 
 lerobot-eval \
   --policy.path="$CHECKPOINT" \

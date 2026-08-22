@@ -17,11 +17,11 @@ export PYTHONNOUSERSITE=1
 source "$PROJECT_ROOT/.venv/bin/activate"
 
 python "$PROJECT_ROOT/scripts/aggregate_results.py" \
-  "$PROJECT_ROOT/results/raw_h10" \
-  --output "$PROJECT_ROOT/results/summary_h10.csv" \
-  --markdown-output "$PROJECT_ROOT/results/summary_h10.md" \
+  "$PROJECT_ROOT/results/raw_h10_openpi_norm" \
+  --output "$PROJECT_ROOT/results/summary_h10_openpi_norm.csv" \
+  --markdown-output "$PROJECT_ROOT/results/summary_h10_openpi_norm.md" \
   --validate-paper-grid
 
-test -s "$PROJECT_ROOT/results/summary_h10.csv"
-test -s "$PROJECT_ROOT/results/summary_h10.md"
+test -s "$PROJECT_ROOT/results/summary_h10_openpi_norm.csv"
+test -s "$PROJECT_ROOT/results/summary_h10_openpi_norm.md"
 echo "AGGREGATION_H10_SUCCESS=true"
