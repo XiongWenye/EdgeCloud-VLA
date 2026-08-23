@@ -18,7 +18,7 @@ export PROJECT_ROOT=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA
 export HF_HOME="$PROJECT_ROOT/cache/huggingface"
 export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
 export MUJOCO_GL=egl
-export WANDB_MODE=disabled
+export WANDB_MODE=online
 export PYTHONNOUSERSITE=1
 export TOKENIZERS_PARALLELISM=false
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -60,6 +60,10 @@ manifest = {
     "stale_loss_weight_max": 0.5,
     "stale_loss_warmup_steps": 10000,
     "save_interval": 5000,
+    "wandb": {
+        "enable": True,
+        "project": "cloudedge_pi05_libero_aligned"
+    }
 }
 (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 print(f"RUN_MANIFEST_WRITTEN: {run_dir / run_manifest.json}")
@@ -81,7 +85,7 @@ if [[ -f "$LAST_CONFIG" ]]; then
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
       --config_path="$LAST_CONFIG" --resume=true &
 else
-    echo "Starting fresh training from $BOOTSTRAP..."
+    echo "Starting fresh training from $BOOTSTRAP with wandb logging..."
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
       --policy.path="$BOOTSTRAP" \
       --policy.device=cuda \
@@ -102,7 +106,8 @@ else
       --save_freq=5000 \
       --log_freq=100 \
       --eval_freq=0 \
-      --wandb.enable=false \
+      --wandb.enable=true \
+      --wandb.project=cloudedge_pi05_libero_aligned \
       --output_dir="$RUN_DIR" \
       --job_name=cloudedge_pi05_libero_aligned_120k &
 fi
