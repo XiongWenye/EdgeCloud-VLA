@@ -27,10 +27,7 @@ source "$PROJECT_ROOT/.venv/bin/activate"
 BOOTSTRAP="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_official_aligned"
 RUN_DIR="$PROJECT_ROOT/outputs/cloudedge_pi05_libero_aligned_120k"
 LAST_CONFIG="$RUN_DIR/checkpoints/last/pretrained_model/train_config.json"
-mkdir -p "$RUN_DIR" "$PROJECT_ROOT/logs"
-
-# Write run manifest
-python "$PROJECT_ROOT/scripts/write_run_manifest.py" --run-dir="$RUN_DIR" --bootstrap="$BOOTSTRAP"
+mkdir -p "$PROJECT_ROOT/logs"
 
 requeue_job() {
     echo "Requeue signal received. Gracefully terminating training process..."
@@ -45,10 +42,17 @@ trap requeue_job USR1
 
 if [[ -f "$LAST_CONFIG" ]]; then
     echo "Resuming training from $LAST_CONFIG..."
+    python "$PROJECT_ROOT/scripts/write_run_manifest.py" --run-dir="$RUN_DIR" --bootstrap="$BOOTSTRAP"
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
       --config_path="$LAST_CONFIG" --resume=true &
 else
     echo "Starting fresh training from $BOOTSTRAP with wandb logging..."
+    rm -rf "$RUN_DIR"
+    (
+      while [[ ! -d "$RUN_DIR" ]]; do sleep 2; done
+      sleep 5
+      python "$PROJECT_ROOT/scripts/write_run_manifest.py" --run-dir="$RUN_DIR" --bootstrap="$BOOTSTRAP"
+    ) &
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
       --policy.path="$BOOTSTRAP" \
       --policy.device=cuda \
