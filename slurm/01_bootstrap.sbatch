@@ -2,7 +2,7 @@
 #SBATCH --job-name=cepi05_bootstrap
 #SBATCH --output=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/bootstrap_%j.out
 #SBATCH --error=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/bootstrap_%j.err
-#SBATCH --partition=kempner
+#SBATCH --partition=kempner_h200
 #SBATCH --account=kempner_ydu_lab
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -18,16 +18,14 @@ export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
 export PYTHONNOUSERSITE=1
 source "$PROJECT_ROOT/.venv/bin/activate"
 
-NORM_STATS="$PROJECT_ROOT/artifacts/openpi_pi05_libero_norm_stats.json"
-mkdir -p "$PROJECT_ROOT/artifacts"
-curl -L --fail --retry 5 --silent --show-error \
-  -o "$NORM_STATS" \
-  "https://storage.googleapis.com/openpi-assets/checkpoints/pi05_libero/assets/physical-intelligence/libero/norm_stats.json"
-echo "b3a44bb2810436fb62917decaea58bd4d9110255df527dea21e8fd40c960bd84  $NORM_STATS" \
-  | sha256sum --check --strict
+NORM_STATS="$PROJECT_ROOT/cache/openpi_reference/openpi-assets/checkpoints/pi05_libero/assets/physical-intelligence/libero/norm_stats.json"
+BASE_CHECKPOINT="$PROJECT_ROOT/artifacts/pi05_libero_base_official_aligned"
+BOOTSTRAP_OUTPUT="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_official_aligned"
+
+mkdir -p "$PROJECT_ROOT/artifacts" "$PROJECT_ROOT/logs"
 
 nvidia-smi --query-gpu=index,name,uuid,memory.total --format=csv,noheader
-python - <<'PY'
+python - <<PY
 import torch
 
 assert torch.cuda.is_available(), "CUDA is not available inside the allocated SLURM job"
@@ -38,11 +36,12 @@ print("CUDA_PREFLIGHT_SUCCESS=true")
 PY
 
 python "$PROJECT_ROOT/scripts/bootstrap_checkpoint.py" \
-  --base=lerobot/pi05_libero_base \
-  --base-revision=a217bfd3b14673cf2ce597e69997ab21866438dd \
+  --base="$BASE_CHECKPOINT" \
   --norm-stats="$NORM_STATS" \
-  --output="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_openpi_norm" \
+  --output="$BOOTSTRAP_OUTPUT" \
   --device=cuda \
   --history-window=21 \
   --lambda-max=0.5 \
   --warmup-steps=10000
+
+echo "BOOTSTRAP_JOB_COMPLETE=true"

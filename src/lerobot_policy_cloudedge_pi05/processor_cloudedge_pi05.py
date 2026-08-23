@@ -4,17 +4,16 @@ from typing import Any
 import torch
 
 from lerobot.configs.types import PipelineFeatureType, PolicyFeature
-from lerobot.policies.pi05.processor_pi05 import Pi05PrepareStateTokenizerProcessorStep
 from lerobot.processor import (
     AddBatchDimensionProcessorStep,
     DeviceProcessorStep,
     NormalizerProcessorStep,
+    PaliGemmaTokenizerProcessorStep,
     PolicyAction,
     PolicyProcessorPipeline,
     ProcessorStep,
     ProcessorStepRegistry,
     RenameObservationsProcessorStep,
-    TokenizerProcessorStep,
     UnnormalizerProcessorStep,
 )
 from lerobot.processor.converters import policy_action_to_transition, transition_to_policy_action
@@ -41,10 +40,15 @@ class SelectCurrentStateProcessorStep(ProcessorStep):
         transition = transition.copy()
         observations = transition.get(TransitionKey.OBSERVATION, {})
         state = observations.get(OBS_STATE)
-        if isinstance(state, torch.Tensor) and state.ndim >= 3:
-            observations = observations.copy()
-            observations[OBS_STATE] = state[:, -1]
-            transition[TransitionKey.OBSERVATION] = observations
+        if isinstance(state, torch.Tensor):
+            if state.ndim >= 3:
+                observations = observations.copy()
+                observations[OBS_STATE] = state[:, -1]
+                transition[TransitionKey.OBSERVATION] = observations
+            elif state.ndim == 2 and state.shape[0] > 1:
+                observations = observations.copy()
+                observations[OBS_STATE] = state[-1]
+                transition[TransitionKey.OBSERVATION] = observations
         return transition
 
     def transform_features(
@@ -69,12 +73,11 @@ def make_cloudedge_pi05_pre_post_processors(
             norm_map=config.normalization_mapping,
             stats=dataset_stats,
         ),
-        Pi05PrepareStateTokenizerProcessorStep(max_state_dim=config.max_state_dim),
-        TokenizerProcessorStep(
-            tokenizer_name="google/paligemma-3b-pt-224",
+        PaliGemmaTokenizerProcessorStep(
+            tokenizer_path="paligemma_tokenizer.model",
             max_length=config.tokenizer_max_length,
-            padding_side="right",
-            padding="max_length",
+            task_key="task",
+            clean_text=True,
         ),
         DeviceProcessorStep(device=config.device),
     ]
@@ -98,4 +101,3 @@ def make_cloudedge_pi05_pre_post_processors(
             to_output=transition_to_policy_action,
         ),
     )
-

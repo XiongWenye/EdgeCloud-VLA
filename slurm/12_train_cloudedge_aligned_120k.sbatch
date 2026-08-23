@@ -1,0 +1,113 @@
+#!/bin/bash
+#SBATCH --job-name=cepi05_120k_aln
+#SBATCH --output=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/train_aligned_120k_%j.out
+#SBATCH --error=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/train_aligned_120k_%j.err
+#SBATCH --partition=kempner_h200
+#SBATCH --account=kempner_ydu_lab
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=32
+#SBATCH --gres=gpu:4
+#SBATCH --mem=192G
+#SBATCH --time=2-00:00:00
+#SBATCH --requeue
+#SBATCH --signal=B:USR1@300
+
+set -euo pipefail
+export PROJECT_ROOT=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA
+export HF_HOME="$PROJECT_ROOT/cache/huggingface"
+export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
+export MUJOCO_GL=egl
+export WANDB_MODE=disabled
+export PYTHONNOUSERSITE=1
+export TOKENIZERS_PARALLELISM=false
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+source "$PROJECT_ROOT/.venv/bin/activate"
+
+BOOTSTRAP="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_official_aligned"
+RUN_DIR="$PROJECT_ROOT/outputs/cloudedge_pi05_libero_aligned_120k"
+LAST_CONFIG="$RUN_DIR/checkpoints/last/pretrained_model/train_config.json"
+mkdir -p "$RUN_DIR" "$PROJECT_ROOT/logs"
+
+# Write run manifest
+python - <<PY
+import json
+import os
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+run_dir = Path("$RUN_DIR")
+git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd="$PROJECT_ROOT").decode().strip()
+manifest = {
+    "job_id": os.environ.get("SLURM_JOB_ID", "local"),
+    "timestamp_start": datetime.utcnow().isoformat() + "Z",
+    "git_commit": git_commit,
+    "bootstrap_model": "$BOOTSTRAP",
+    "base_model": "artifacts/pi05_libero_base_official_aligned",
+    "steps": 120000,
+    "global_batch_size": 8,
+    "per_gpu_batch_size": 2,
+    "num_gpus": 4,
+    "seed": 7,
+    "precision": "bfloat16",
+    "learning_rate": 2.5e-5,
+    "lr_warmup_steps": 1000,
+    "lr_decay_steps": 30000,
+    "lr_decay_floor": 2.5e-6,
+    "history_window": 21,
+    "stale_delay_distribution": "Uniform(1..20)",
+    "stale_loss_weight_max": 0.5,
+    "stale_loss_warmup_steps": 10000,
+    "save_interval": 5000,
+}
+(run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+print(f"RUN_MANIFEST_WRITTEN: {run_dir / run_manifest.json}")
+PY
+
+requeue_job() {
+    echo "Requeue signal received. Gracefully terminating training process..."
+    if [[ -n "${TRAIN_PID:-}" ]]; then
+        kill -TERM "$TRAIN_PID" 2>/dev/null || true
+        wait "$TRAIN_PID" 2>/dev/null || true
+    fi
+    scontrol requeue "$SLURM_JOB_ID"
+    exit 0
+}
+trap requeue_job USR1
+
+if [[ -f "$LAST_CONFIG" ]]; then
+    echo "Resuming training from $LAST_CONFIG..."
+    accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
+      --config_path="$LAST_CONFIG" --resume=true &
+else
+    echo "Starting fresh training from $BOOTSTRAP..."
+    accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
+      --policy.path="$BOOTSTRAP" \
+      --policy.device=cuda \
+      --policy.dtype=bfloat16 \
+      --policy.freeze_vision_encoder=true \
+      --policy.train_expert_only=false \
+      --policy.gradient_checkpointing=false \
+      --policy.compile_model=false \
+      --policy.push_to_hub=false \
+      --dataset.repo_id=lerobot/libero \
+      --dataset.revision=a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4 \
+      --dataset.video_backend=pyav \
+      --seed=7 \
+      --steps=120000 \
+      --batch_size=2 \
+      --num_workers=4 \
+      --save_checkpoint=true \
+      --save_freq=5000 \
+      --log_freq=100 \
+      --eval_freq=0 \
+      --wandb.enable=false \
+      --output_dir="$RUN_DIR" \
+      --job_name=cloudedge_pi05_libero_aligned_120k &
+fi
+TRAIN_PID=$!
+wait "$TRAIN_PID"
+
+test -s "$RUN_DIR/checkpoints/120000/pretrained_model/model.safetensors"
+echo "TRAINING_120K_SUCCESS=true"
