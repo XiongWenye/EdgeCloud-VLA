@@ -30,44 +30,7 @@ LAST_CONFIG="$RUN_DIR/checkpoints/last/pretrained_model/train_config.json"
 mkdir -p "$RUN_DIR" "$PROJECT_ROOT/logs"
 
 # Write run manifest
-python - <<PY
-import json
-import os
-import subprocess
-from datetime import datetime
-from pathlib import Path
-
-run_dir = Path("$RUN_DIR")
-git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd="$PROJECT_ROOT").decode().strip()
-manifest = {
-    "job_id": os.environ.get("SLURM_JOB_ID", "local"),
-    "timestamp_start": datetime.utcnow().isoformat() + "Z",
-    "git_commit": git_commit,
-    "bootstrap_model": "$BOOTSTRAP",
-    "base_model": "artifacts/pi05_libero_base_official_aligned",
-    "steps": 120000,
-    "global_batch_size": 8,
-    "per_gpu_batch_size": 2,
-    "num_gpus": 4,
-    "seed": 7,
-    "precision": "bfloat16",
-    "learning_rate": 2.5e-5,
-    "lr_warmup_steps": 1000,
-    "lr_decay_steps": 30000,
-    "lr_decay_floor": 2.5e-6,
-    "history_window": 21,
-    "stale_delay_distribution": "Uniform(1..20)",
-    "stale_loss_weight_max": 0.5,
-    "stale_loss_warmup_steps": 10000,
-    "save_interval": 5000,
-    "wandb": {
-        "enable": True,
-        "project": "cloudedge_pi05_libero_aligned"
-    }
-}
-(run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-print(f"RUN_MANIFEST_WRITTEN: {run_dir / run_manifest.json}")
-PY
+python "$PROJECT_ROOT/scripts/write_run_manifest.py" --run-dir="$RUN_DIR" --bootstrap="$BOOTSTRAP"
 
 requeue_job() {
     echo "Requeue signal received. Gracefully terminating training process..."
