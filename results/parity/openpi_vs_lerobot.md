@@ -1,33 +1,28 @@
-# OpenPI vs LeRobot pi05 parity trace
+# OpenPI vs Aligned LeRobot pi05 Parity Trace
 
 Same fixed LIBERO Spatial observation and fixed Gaussian noise.
 
 ## Protocol
 
 - OpenPI predicts 10 and executes 5.
-- Saved LeRobot predicts 50; its artifact default executes 10.
-- The previous evaluator override and this parity trace compare the first 5 actions.
-- Matched LeRobot predicts 10 with official token IDs and executes 5.
-- Both run ten Euler steps with dt=-0.1.
+- Aligned LeRobot predicts 10 and executes 5.
+- Both run 10 Euler flow-matching steps with dt=-0.1.
 
-## Tensor differences
+## Tensor Parity Metrics
 
-- Diagnostic OpenPI unrolled trace versus upstream compiled final max delta: 0.00195312.
-  Final-action metrics use the upstream compiled output.
 - Base image: MAE 7.785e-08, RMSE 8.942e-08, max 1.192e-07.
 - Wrist image: MAE 7.695e-08, RMSE 9.315e-08, max 1.192e-07.
-- Normalized state: MAE 7.223e-06, RMSE 1.763e-05, max 4.975e-05.
-- Matched flow velocities: MAE 5.448e-03, RMSE 7.501e-03, max 5.768e-02.
-- Matched flow states: MAE 9.846e-04, RMSE 1.460e-03, max 9.037e-03.
-- Matched final normalized actions: MAE 8.257e-04, RMSE 1.225e-03, max 6.692e-03.
-- Matched first five executed actions: MAE 1.508e-03, RMSE 2.131e-03, max 5.636e-03.
-- Saved conversion first five executed actions: MAE 7.962e-02, RMSE 1.314e-01, max 4.953e-01.
+- Camera masks: OpenPI [True, True, False], LeRobot [True, True, False].
+- Aligned flow velocities: MAE 5.617e-03, RMSE 7.742e-03, max 5.768e-02.
+- Aligned flow states: MAE 9.890e-04, RMSE 1.442e-03, max 9.037e-03.
+- Aligned final normalized actions: MAE 8.538e-04, RMSE 1.255e-03, max 5.716e-03.
+- Aligned first five executed actions: MAE 1.477e-03, RMSE 2.023e-03, max 4.814e-03.
+- Saved unaligned conversion first five executed actions: MAE 7.963e-02, RMSE 1.316e-01, max 4.961e-01.
 
-## Semantic differences
+## Token and Semantic Alignment
 
-- Valid prompt tokens: OpenPI 20, LeRobot 154; equal IDs: False.
+- Valid prompt tokens: OpenPI 20, Aligned LeRobot 20; equal IDs: True.
 - Official pi05_libero uses cleaned task text plus newline and does not feed state to the model.
-- Saved LeRobot inserts normalized, zero-padded 32D state values discretized into 256 bins in a Task/State/Action prompt.
-- OpenPI adds 1e-6 to every quantile range; LeRobot substitutes 1e-8 only for an exactly zero range.
-- Saved LeRobot predicts 50 coupled tokens and defaults to executing 10; OpenPI predicts 10 and executes five.
-- The parity trace compares the first five from both chunks to isolate replanning semantics.
+- Aligned LeRobot preprocessor independently produces the exact same token IDs and masks using local PaliGemma SentencePiece.
+- OpenPI quantile normalization formula with epsilon 1e-6 is matched exactly in LeRobot normalizer/unnormalizer.
+- Aligned LeRobot predicts 10 coupled tokens and executes 5, matching OpenPI replanning horizon.

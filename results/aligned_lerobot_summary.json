@@ -1,0 +1,88 @@
+{
+  "suites": {
+    "libero_spatial": {
+      "name": "LIBERO-Spatial",
+      "n_episodes": 500,
+      "success_rate": 98.6,
+      "success_count": 493,
+      "per_task_success": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        96.0,
+        96.0,
+        98.0,
+        100.0,
+        100.0,
+        96.0
+      ],
+      "status": "COMPLETED"
+    },
+    "libero_object": {
+      "name": "LIBERO-Object",
+      "n_episodes": 500,
+      "success_rate": 99.0,
+      "success_count": 495,
+      "per_task_success": [
+        100.0,
+        100.0,
+        98.0,
+        100.0,
+        98.0,
+        100.0,
+        100.0,
+        98.0,
+        98.0,
+        98.0
+      ],
+      "status": "COMPLETED"
+    },
+    "libero_goal": {
+      "name": "LIBERO-Goal",
+      "n_episodes": 500,
+      "success_rate": 98.2,
+      "success_count": 491,
+      "per_task_success": [
+        98.0,
+        100.0,
+        94.0,
+        98.0,
+        98.0,
+        96.0,
+        98.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "status": "COMPLETED"
+    },
+    "libero_10": {
+      "name": "LIBERO-10 (Long Horizon)",
+      "n_episodes": 500,
+      "success_rate": 91.8,
+      "success_count": 459,
+      "per_task_success": [
+        94.0,
+        96.0,
+        96.0,
+        96.0,
+        98.0,
+        98.0,
+        94.0,
+        100.0,
+        56.00000000000001,
+        90.0
+      ],
+      "status": "COMPLETED"
+    }
+  },
+  "completed_suites": 4,
+  "total_episodes": 2000,
+  "total_successes": 1938,
+  "aligned_lerobot_macro_avg": 96.9,
+  "published_macro_avg": 96.85,
+  "openpi_cluster_macro_avg": 97.15,
+  "unaligned_lerobot_macro_avg": 92.5,
+  "gain_over_unaligned": 4.400000000000006
+}

@@ -1,0 +1,267 @@
+diff --git a/src/lerobot/configs/types.py b/src/lerobot/configs/types.py
+index 18359ef0..a37c903b 100644
+--- a/src/lerobot/configs/types.py
++++ b/src/lerobot/configs/types.py
+@@ -37,6 +37,7 @@ class NormalizationMode(str, Enum):
+     IDENTITY = "IDENTITY"
+     QUANTILES = "QUANTILES"
+     QUANTILE10 = "QUANTILE10"
++    OPENPI_QUANTILES = "OPENPI_QUANTILES"
+ 
+ 
+ @dataclass
+diff --git a/src/lerobot/envs/libero.py b/src/lerobot/envs/libero.py
+index d20dae8e..b1a46ac5 100644
+--- a/src/lerobot/envs/libero.py
++++ b/src/lerobot/envs/libero.py
+@@ -86,7 +86,7 @@ ACTION_DIM = 7
+ ACTION_LOW = -1.0
+ ACTION_HIGH = 1.0
+ TASK_SUITE_MAX_STEPS: dict[str, int] = {
+-    "libero_spatial": 280,  # longest training demo has 193 steps
++    "libero_spatial": 220,  # longest training demo has 193 steps
+     "libero_object": 280,  # longest training demo has 254 steps
+     "libero_goal": 300,  # longest training demo has 270 steps
+     "libero_10": 520,  # longest training demo has 505 steps
+diff --git a/src/lerobot/policies/pi05/configuration_pi05.py b/src/lerobot/policies/pi05/configuration_pi05.py
+index b96e6d19..c658d523 100644
+--- a/src/lerobot/policies/pi05/configuration_pi05.py
++++ b/src/lerobot/policies/pi05/configuration_pi05.py
+@@ -66,8 +66,8 @@ class PI05Config(PreTrainedConfig):
+     normalization_mapping: dict[str, NormalizationMode] = field(
+         default_factory=lambda: {
+             "VISUAL": NormalizationMode.IDENTITY,
+-            "STATE": NormalizationMode.QUANTILES,  # Pi0.5 uses quantiles for state
+-            "ACTION": NormalizationMode.QUANTILES,  # Pi0.5 uses quantiles for action
++            "STATE": NormalizationMode.OPENPI_QUANTILES,
++            "ACTION": NormalizationMode.OPENPI_QUANTILES,
+         }
+     )
+ 
+diff --git a/src/lerobot/policies/pi05/processor_pi05.py b/src/lerobot/policies/pi05/processor_pi05.py
+index e29bc4c2..26d30972 100644
+--- a/src/lerobot/policies/pi05/processor_pi05.py
++++ b/src/lerobot/policies/pi05/processor_pi05.py
+@@ -34,6 +34,7 @@ from lerobot.processor import (
+     ProcessorStepRegistry,
+     RenameObservationsProcessorStep,
+     TokenizerProcessorStep,
++    PaliGemmaTokenizerProcessorStep,
+     UnnormalizerProcessorStep,
+ )
+ from lerobot.processor.converters import policy_action_to_transition, transition_to_policy_action
+@@ -131,21 +132,17 @@ def make_pi05_pre_post_processors(
+ 
+     # Add remaining processors
+     input_steps: list[ProcessorStep] = [
+-        RenameObservationsProcessorStep(rename_map={}),  # To mimic the same processor as pretrained one
++        RenameObservationsProcessorStep(rename_map={}),
+         AddBatchDimensionProcessorStep(),
+-        # NOTE: NormalizerProcessorStep MUST come before Pi05PrepareStateTokenizerProcessorStep
+-        # because the tokenizer step expects normalized state in [-1, 1] range for discretization
+         NormalizerProcessorStep(
+             features={**config.input_features, **config.output_features},
+             norm_map=config.normalization_mapping,
+             stats=dataset_stats,
+         ),
+-        Pi05PrepareStateTokenizerProcessorStep(max_state_dim=config.max_state_dim),
+-        TokenizerProcessorStep(
+-            tokenizer_name="google/paligemma-3b-pt-224",
++        PaliGemmaTokenizerProcessorStep(
+             max_length=config.tokenizer_max_length,
+-            padding_side="right",
+-            padding="max_length",
++            task_key="task",
++            clean_text=True,
+         ),
+         DeviceProcessorStep(device=config.device),
+     ]
+diff --git a/src/lerobot/processor/__init__.py b/src/lerobot/processor/__init__.py
+index 0b63e160..3335733e 100644
+--- a/src/lerobot/processor/__init__.py
++++ b/src/lerobot/processor/__init__.py
+@@ -75,7 +75,7 @@ from .policy_robot_bridge import (
+     RobotActionToPolicyActionProcessorStep,
+ )
+ from .rename_processor import RenameObservationsProcessorStep
+-from .tokenizer_processor import ActionTokenizerProcessorStep, TokenizerProcessorStep
++from .tokenizer_processor import ActionTokenizerProcessorStep, TokenizerProcessorStep, PaliGemmaTokenizerProcessorStep
+ 
+ __all__ = [
+     "ActionProcessorStep",
+@@ -121,6 +121,7 @@ __all__ = [
+     "AddBatchDimensionProcessorStep",
+     "RobotProcessorPipeline",
+     "TokenizerProcessorStep",
++    "PaliGemmaTokenizerProcessorStep",
+     "ActionTokenizerProcessorStep",
+     "Torch2NumpyActionProcessorStep",
+     "RobotActionToPolicyActionProcessorStep",
+diff --git a/src/lerobot/processor/normalize_processor.py b/src/lerobot/processor/normalize_processor.py
+index 4769b91a..a6666616 100644
+--- a/src/lerobot/processor/normalize_processor.py
++++ b/src/lerobot/processor/normalize_processor.py
+@@ -311,6 +311,7 @@ class _NormalizationMixin:
+             NormalizationMode.MIN_MAX,
+             NormalizationMode.QUANTILES,
+             NormalizationMode.QUANTILE10,
++            NormalizationMode.OPENPI_QUANTILES,
+         ):
+             raise ValueError(f"Unsupported normalization mode: {norm_mode}")
+ 
+@@ -359,6 +360,19 @@ class _NormalizationMixin:
+             # Map from [min, max] to [-1, 1]
+             return 2 * (tensor - min_val) / denom - 1
+ 
++        if norm_mode == NormalizationMode.OPENPI_QUANTILES:
++            q01 = stats.get("q01", None)
++            q99 = stats.get("q99", None)
++            if q01 is None or q99 is None:
++                raise ValueError(
++                    "OPENPI_QUANTILES normalization mode requires q01 and q99 stats"
++                )
++
++            denom = q99 - q01 + 1e-6
++            if inverse:
++                return (tensor + 1.0) * denom / 2.0 + q01
++            return 2.0 * (tensor - q01) / denom - 1.0
++
+         if norm_mode == NormalizationMode.QUANTILES:
+             q01 = stats.get("q01", None)
+             q99 = stats.get("q99", None)
+diff --git a/src/lerobot/processor/tokenizer_processor.py b/src/lerobot/processor/tokenizer_processor.py
+index df559555..a8e137dd 100644
+--- a/src/lerobot/processor/tokenizer_processor.py
++++ b/src/lerobot/processor/tokenizer_processor.py
+@@ -574,3 +574,131 @@ class ActionTokenizerProcessorStep(ActionProcessorStep):
+             The updated dictionary of policy features.
+         """
+         return features
++
++
++@dataclass
++@ProcessorStepRegistry.register(name="paligemma_tokenizer_processor")
++class PaliGemmaTokenizerProcessorStep(ObservationProcessorStep):
++    """
++    Processor step to tokenize a natural language task description using the official
++    PaliGemma SentencePiece tokenizer (without HuggingFace hub downloads or state-in-prompt).
++    """
++
++    tokenizer_path: str | None = None
++    tokenizer: Any | None = None
++    max_length: int = 200
++    task_key: str = "task"
++    clean_text: bool = True
++
++    input_tokenizer: Any = field(default=None, init=False, repr=False)
++
++    def __post_init__(self):
++        if self.tokenizer is not None:
++            self.input_tokenizer = self.tokenizer
++            return
++
++        resolved = self._resolve_model_path(self.tokenizer_path)
++        if resolved is None or not resolved.is_file():
++            raise FileNotFoundError(
++                f"Could not resolve PaliGemma tokenizer model file. Checked {self.tokenizer_path!r} and fallback paths."
++            )
++        import sentencepiece
++        self.input_tokenizer = sentencepiece.SentencePieceProcessor(model_file=str(resolved))
++
++    @staticmethod
++    def _resolve_model_path(path_str: str | None) -> Path | None:
++        from pathlib import Path
++        candidates = []
++        if path_str:
++            p = Path(path_str)
++            candidates.extend([
++                p,
++                Path.cwd() / p,
++                Path(__file__).resolve().parent / p,
++                Path("/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA") / p,
++                Path("/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_base_official_aligned") / p,
++                Path("/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/cache/openpi_reference/big_vision") / p,
++            ])
++        candidates.extend([
++            Path("/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/artifacts/pi05_libero_base_official_aligned/paligemma_tokenizer.model"),
++            Path("/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/cache/openpi_reference/big_vision/paligemma_tokenizer.model"),
++            Path.cwd() / "paligemma_tokenizer.model",
++            Path.cwd() / "cache/openpi_reference/big_vision/paligemma_tokenizer.model",
++        ])
++        for c in candidates:
++            if c.is_file():
++                return c.resolve()
++        return None
++
++    def get_task(self, transition: EnvTransition) -> list[str] | None:
++        complementary_data = transition.get(TransitionKey.COMPLEMENTARY_DATA)
++        if complementary_data is None:
++            raise ValueError("Complementary data is None so no task can be extracted from it")
++
++        task = complementary_data.get(self.task_key)
++        if task is None:
++            raise ValueError(f"Task key {self.task_key!r} not found in complementary data")
++
++        if isinstance(task, str):
++            return [task]
++        elif isinstance(task, list) and all(isinstance(t, str) for t in task):
++            return task
++        return None
++
++    def _detect_device(self, transition: EnvTransition) -> torch.device | None:
++        observation = transition.get(TransitionKey.OBSERVATION)
++        if observation:
++            for value in observation.values():
++                if isinstance(value, torch.Tensor):
++                    return value.device
++        action = transition.get(TransitionKey.ACTION)
++        if isinstance(action, torch.Tensor):
++            return action.device
++        return None
++
++    def observation(self, observation: RobotObservation) -> RobotObservation:
++        tasks = self.get_task(self.transition)
++        if tasks is None:
++            raise ValueError("Task cannot be None")
++
++        tokens_list = []
++        masks_list = []
++
++        for task_str in tasks:
++            cleaned = task_str.strip().replace("_", " ").replace("\n", " ") if self.clean_text else task_str
++            tok_ids = self.input_tokenizer.encode(cleaned, add_bos=True) + self.input_tokenizer.encode("\n")
++            if len(tok_ids) > self.max_length:
++                tok_ids = tok_ids[: self.max_length]
++                mask = [True] * self.max_length
++            else:
++                mask = [True] * len(tok_ids) + [False] * (self.max_length - len(tok_ids))
++                tok_ids = tok_ids + [0] * (self.max_length - len(tok_ids))
++
++            tokens_list.append(torch.tensor(tok_ids, dtype=torch.long))
++            masks_list.append(torch.tensor(mask, dtype=torch.bool))
++
++        tokens_tensor = torch.stack(tokens_list, dim=0)
++        masks_tensor = torch.stack(masks_list, dim=0)
++
++        target_device = self._detect_device(self.transition)
++        if target_device is not None:
++            tokens_tensor = tokens_tensor.to(target_device)
++            masks_tensor = masks_tensor.to(target_device)
++
++        new_observation = dict(observation)
++        new_observation[OBS_LANGUAGE_TOKENS] = tokens_tensor
++        new_observation[OBS_LANGUAGE_ATTENTION_MASK] = masks_tensor
++        return new_observation
++
++    def get_config(self) -> dict[str, Any]:
++        return {
++            "tokenizer_path": str(self.tokenizer_path) if self.tokenizer_path is not None else "paligemma_tokenizer.model",
++            "max_length": self.max_length,
++            "task_key": self.task_key,
++            "clean_text": self.clean_text,
++        }
++
++    def transform_features(
++        self, features: dict[PipelineFeatureType, dict[str, PolicyFeature]]
++    ) -> dict[PipelineFeatureType, dict[str, PolicyFeature]]:
++        return features
