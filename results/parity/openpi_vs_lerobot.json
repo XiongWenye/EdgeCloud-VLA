@@ -4,6 +4,7 @@
     "openpi_execute": 5,
     "lerobot_saved_horizon": 50,
     "lerobot_saved_execute": 5,
+    "lerobot_artifact_n_action_steps": 10,
     "lerobot_matched_horizon": 10,
     "flow_steps": 10,
     "flow_dt": -0.10000000149011612,

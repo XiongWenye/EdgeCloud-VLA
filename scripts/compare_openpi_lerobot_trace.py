@@ -44,6 +44,7 @@ def main():
     obs, op, lr = np.load(a.observation), np.load(a.openpi), np.load(a.lerobot)
     stats = load_file(a.checkpoint / "policy_postprocessor_step_0_unnormalizer_processor.safetensors")
     q01, q99 = stats["action.q01"].numpy(), stats["action.q99"].numpy()
+    checkpoint_config = json.loads((a.checkpoint / "config.json").read_text())
 
     op_base, op_wrist = op["base_model"], op["wrist_model"]
     if op_base.shape[-1] == 3:
@@ -60,6 +61,7 @@ def main():
             "openpi_execute": int(op["replan_steps"]),
             "lerobot_saved_horizon": int(lr["saved_chunk_size"]),
             "lerobot_saved_execute": int(lr["saved_replan_steps"]),
+            "lerobot_artifact_n_action_steps": int(checkpoint_config["n_action_steps"]),
             "lerobot_matched_horizon": int(lr["matched_chunk_size"]),
             "flow_steps": int(op["flow_steps"]),
             "flow_dt": float(op["flow_dt"]),
@@ -110,7 +112,8 @@ def main():
         "## Protocol",
         "",
         f"- OpenPI predicts {result['protocol']['openpi_horizon']} and executes {result['protocol']['openpi_execute']}.",
-        f"- Saved LeRobot predicts {result['protocol']['lerobot_saved_horizon']} and executes {result['protocol']['lerobot_saved_execute']}.",
+        f"- Saved LeRobot predicts {result['protocol']['lerobot_saved_horizon']}; its artifact default executes {result['protocol']['lerobot_artifact_n_action_steps']}.",
+        f"- The previous evaluator override and this parity trace compare the first {result['protocol']['lerobot_saved_execute']} actions.",
         f"- Matched LeRobot predicts {result['protocol']['lerobot_matched_horizon']} with official token IDs and executes 5.",
         "- Both run ten Euler steps with dt=-0.1.",
         "",
@@ -133,7 +136,8 @@ def main():
         "- Official pi05_libero uses cleaned task text plus newline and does not feed state to the model.",
         "- Saved LeRobot inserts normalized, zero-padded 32D state values discretized into 256 bins in a Task/State/Action prompt.",
         "- OpenPI adds 1e-6 to every quantile range; LeRobot substitutes 1e-8 only for an exactly zero range.",
-        "- Saved LeRobot predicts 50 coupled tokens; OpenPI predicts 10. Both execute the first five.",
+        "- Saved LeRobot predicts 50 coupled tokens and defaults to executing 10; OpenPI predicts 10 and executes five.",
+        "- The parity trace compares the first five from both chunks to isolate replanning semantics.",
     ]
 
     a.json.parent.mkdir(parents=True, exist_ok=True)

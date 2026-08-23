@@ -89,8 +89,9 @@ The saved LeRobot conversion is not semantically equivalent:
   normalized, zero-padded 32D state discretized into 256 bins in a
   Task/State/Action prompt.
 - Official OpenPI predicts a 10-action chunk and executes the first five.
-  The saved LeRobot checkpoint predicts 50 coupled action tokens and executes
-  the first five.
+  The saved LeRobot checkpoint predicts 50 coupled action tokens and defaults
+  to executing 10. The previous evaluator override and parity trace compare
+  its first five actions against OpenPI.
 - OpenPI always adds 1e-6 to each quantile range; LeRobot only substitutes
   1e-8 when a range is exactly zero. The resulting action unnormalization
   difference is negligible (maximum 9.537e-7).

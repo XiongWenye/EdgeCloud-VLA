@@ -5,7 +5,8 @@ Same fixed LIBERO Spatial observation and fixed Gaussian noise.
 ## Protocol
 
 - OpenPI predicts 10 and executes 5.
-- Saved LeRobot predicts 50 and executes 5.
+- Saved LeRobot predicts 50; its artifact default executes 10.
+- The previous evaluator override and this parity trace compare the first 5 actions.
 - Matched LeRobot predicts 10 with official token IDs and executes 5.
 - Both run ten Euler steps with dt=-0.1.
 
@@ -28,4 +29,5 @@ Same fixed LIBERO Spatial observation and fixed Gaussian noise.
 - Official pi05_libero uses cleaned task text plus newline and does not feed state to the model.
 - Saved LeRobot inserts normalized, zero-padded 32D state values discretized into 256 bins in a Task/State/Action prompt.
 - OpenPI adds 1e-6 to every quantile range; LeRobot substitutes 1e-8 only for an exactly zero range.
-- Saved LeRobot predicts 50 coupled tokens; OpenPI predicts 10. Both execute the first five.
+- Saved LeRobot predicts 50 coupled tokens and defaults to executing 10; OpenPI predicts 10 and executes five.
+- The parity trace compares the first five from both chunks to isolate replanning semantics.
