@@ -101,7 +101,7 @@ def main():
     loss1, info1 = ce_policy.forward(train_batch)
     loss1.backward()
     optimizer.step()
-    print(f"Step 1 loss: {loss1.item():.4f}, fresh: {info1[loss_fresh]:.4f}, stale: {info1[loss_stale]:.4f}")
+    print(f"Step 1 loss: {loss1.item():.4f}, fresh: {info1['loss_fresh']:.4f}, stale: {info1['loss_stale']:.4f}")
     assert not torch.isnan(loss1), "Step 1 loss is NaN"
 
     # Step 2
@@ -109,7 +109,7 @@ def main():
     loss2, info2 = ce_policy.forward(train_batch)
     loss2.backward()
     optimizer.step()
-    print(f"Step 2 loss: {loss2.item():.4f}, fresh: {info2[loss_fresh]:.4f}, stale: {info2[loss_stale]:.4f}")
+    print(f"Step 2 loss: {loss2.item():.4f}, fresh: {info2['loss_fresh']:.4f}, stale: {info2['loss_stale']:.4f}")
     assert not torch.isnan(loss2), "Step 2 loss is NaN"
 
     # Save checkpoint
