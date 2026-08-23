@@ -10,6 +10,10 @@ import torch
 
 from lerobot.policies.factory import make_pre_post_processors
 from lerobot.policies.pi05.modeling_pi05 import PI05Policy
+from lerobot.utils.constants import (
+    OBS_LANGUAGE_ATTENTION_MASK,
+    OBS_LANGUAGE_TOKENS,
+)
 from lerobot_policy_cloudedge_pi05.configuration_cloudedge_pi05 import CloudEdgePI05Config
 from lerobot_policy_cloudedge_pi05.modeling_cloudedge_pi05 import CloudEdgePI05Policy
 
@@ -87,8 +91,8 @@ def main():
         "observation.images.image": torch.rand(2, 21, 3, 224, 224, device=device),
         "observation.images.image2": torch.rand(2, 21, 3, 224, 224, device=device),
         "observation.state": torch.zeros(2, 8, device=device),
-        "observation.language_tokens": torch.zeros(2, 200, dtype=torch.long, device=device),
-        "observation.language_attention_mask": torch.ones(2, 200, dtype=torch.bool, device=device),
+        OBS_LANGUAGE_TOKENS: torch.zeros(2, 200, dtype=torch.long, device=device),
+        OBS_LANGUAGE_ATTENTION_MASK: torch.ones(2, 200, dtype=torch.bool, device=device),
         "action": torch.rand(2, 10, 7, device=device),
     }
 
@@ -150,8 +154,8 @@ def main():
         frame = {
             "observation.images.image": torch.full((1, 3, 224, 224), fill_value=float(step_idx), device=device),
             "observation.images.image2": torch.full((1, 3, 224, 224), fill_value=float(step_idx), device=device),
-            "observation.language_tokens": torch.zeros(1, 200, dtype=torch.long, device=device),
-            "observation.language_attention_mask": torch.ones(1, 200, dtype=torch.bool, device=device),
+            OBS_LANGUAGE_TOKENS: torch.zeros(1, 200, dtype=torch.long, device=device),
+            OBS_LANGUAGE_ATTENTION_MASK: torch.ones(1, 200, dtype=torch.bool, device=device),
         }
         curr_imgs, curr_masks, stale_imgs, stale_masks, d = ce_policy._inference_image_views(frame)
         stale_val = stale_imgs[0][0, 0, 0, 0].item()
