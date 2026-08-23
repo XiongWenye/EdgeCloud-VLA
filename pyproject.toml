@@ -9,6 +9,7 @@ description = "CloudEdgeVLA-style paired-frame flow-matching policy for LeRobot 
 requires-python = ">=3.10"
 dependencies = [
   "lerobot[pi]==0.4.4",
+  "sentencepiece==0.2.0",
   "transformers>=4.53,<5",
 ]
 
