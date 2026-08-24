@@ -9,13 +9,13 @@ import torch
 import torch.nn.functional as F
 from peft import PeftModel
 
+from lerobot.configs.policies import PreTrainedConfig
 from lerobot.policies.factory import make_pre_post_processors
 from lerobot.policies.pi05.modeling_pi05 import PI05Policy
 from lerobot.utils.constants import (
     OBS_LANGUAGE_ATTENTION_MASK,
     OBS_LANGUAGE_TOKENS,
 )
-from lerobot_policy_cloudedge_pi05.configuration_cloudedge_pi05 import CloudEdgePI05Config
 from lerobot_policy_cloudedge_pi05.modeling_cloudedge_pi05 import CloudEdgePI05Policy
 
 
@@ -179,7 +179,7 @@ def main() -> None:
     assert (adapter_dir / "adapter_config.json").is_file()
     assert (adapter_dir / "config.json").is_file()
 
-    saved_config = CloudEdgePI05Config.from_pretrained(adapter_dir)
+    saved_config = PreTrainedConfig.from_pretrained(adapter_dir)
     assert saved_config.cloudedge_train_step == 2
     reloaded_base = CloudEdgePI05Policy.from_pretrained(
         args.bootstrap,
