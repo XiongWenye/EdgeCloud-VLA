@@ -17,17 +17,24 @@ set -euo pipefail
 export PROJECT_ROOT=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA
 export HF_HOME="$PROJECT_ROOT/cache/huggingface"
 export HF_LEROBOT_HOME="$PROJECT_ROOT/cache/lerobot"
+export WANDB_DIR="$PROJECT_ROOT/cache/wandb"
+export WANDB_CACHE_DIR="$PROJECT_ROOT/cache/wandb"
+export WANDB_DATA_DIR="$PROJECT_ROOT/cache/wandb"
+export WANDB_CONFIG_DIR="$PROJECT_ROOT/cache/wandb"
+export TMPDIR="$PROJECT_ROOT/cache/tmp"
+export PIP_CACHE_DIR="$PROJECT_ROOT/cache/pip"
 export MUJOCO_GL=egl
 export WANDB_MODE=online
 export PYTHONNOUSERSITE=1
 export TOKENIZERS_PARALLELISM=false
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+mkdir -p "$PROJECT_ROOT/cache/wandb" "$PROJECT_ROOT/cache/tmp" "$PROJECT_ROOT/logs"
 source "$PROJECT_ROOT/.venv/bin/activate"
 
 BOOTSTRAP="$PROJECT_ROOT/artifacts/cloudedge_pi05_bootstrap_official_aligned"
 RUN_DIR="$PROJECT_ROOT/outputs/cloudedge_pi05_libero_aligned_120k"
 LAST_CONFIG="$RUN_DIR/checkpoints/last/pretrained_model/train_config.json"
-mkdir -p "$PROJECT_ROOT/logs"
 
 requeue_job() {
     echo "Requeue signal received. Gracefully terminating training process..."
@@ -44,7 +51,11 @@ if [[ -f "$LAST_CONFIG" ]]; then
     echo "Resuming training from $LAST_CONFIG..."
     python "$PROJECT_ROOT/scripts/write_run_manifest.py" --run-dir="$RUN_DIR" --bootstrap="$BOOTSTRAP"
     accelerate launch --num_processes=4 -m lerobot.scripts.lerobot_train \
-      --config_path="$LAST_CONFIG" --resume=true &
+      --config_path="$LAST_CONFIG" \
+      --resume=true \
+      --wandb.enable=true \
+      --wandb.disable_artifact=true \
+      --wandb.project=cloudedge_pi05_libero_aligned &
 else
     echo "Starting fresh training from $BOOTSTRAP with wandb logging..."
     rm -rf "$RUN_DIR"
@@ -74,6 +85,7 @@ else
       --log_freq=100 \
       --eval_freq=0 \
       --wandb.enable=true \
+      --wandb.disable_artifact=true \
       --wandb.project=cloudedge_pi05_libero_aligned \
       --output_dir="$RUN_DIR" \
       --job_name=cloudedge_pi05_libero_aligned_120k &
