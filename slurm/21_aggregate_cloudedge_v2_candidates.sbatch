@@ -2,8 +2,8 @@
 #SBATCH --job-name=cepi05_v2_gate
 #SBATCH --output=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/v2_candidate_gate_%j.out
 #SBATCH --error=/n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/logs/v2_candidate_gate_%j.err
-#SBATCH --partition=kempner
-#SBATCH --account=kempner_ydu_lab
+#SBATCH --partition=shared
+#SBATCH --account=ydu_lab
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
