@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "artifacts/cloudedge_pi05_bootstrap_official_aligned",
+        default=ROOT / "artifacts/cloudedge_pi05_v2_bootstrap_official_aligned",
         help="Path to output bootstrap artifact",
     )
     parser.add_argument("--device", default="cuda")
@@ -72,9 +72,12 @@ def main():
     init.update(
         {
             "device": "cpu",  # initialize on cpu for memory efficiency during assembly
+            "architecture_version": 2,
+            "freeze_vision_encoder": True,
             "history_window": args.history_window,
             "stale_loss_weight_max": args.lambda_max,
             "stale_loss_warmup_steps": args.warmup_steps,
+            "cloudedge_train_step": 0,
             "push_to_hub": False,
         }
     )
@@ -90,18 +93,18 @@ def main():
     missing, unexpected = policy.load_state_dict(base.state_dict(), strict=False)
     expected_prefixes = (
         "model.edge_vision.",
-        "model.edge_projection.",
-        "model.cloudedge_train_step",
+        "model.edge_action_head.",
     )
     bad_missing = [key for key in missing if not key.startswith(expected_prefixes)]
     if bad_missing or unexpected:
         raise RuntimeError(f"Bad base transfer: missing={bad_missing}, unexpected={unexpected}")
 
-    # Ensure edge projection is zero-initialized
-    with torch.no_grad():
-        if hasattr(policy.model, "edge_projection"):
-            for p in policy.model.edge_projection.parameters():
-                torch.nn.init.zeros_(p)
+    # The residual output starts at exactly zero, but its upstream edge path
+    # must be non-zero so gradients can reach it after the first update.
+    head = policy.model.edge_action_head
+    assert torch.count_nonzero(head.fusion[-1].weight).item() == 0
+    assert torch.count_nonzero(head.fusion[-1].bias).item() == 0
+    assert torch.count_nonzero(head.edge_projection.weight).item() > 0
 
     # Set target device for runtime
     config.device = args.device

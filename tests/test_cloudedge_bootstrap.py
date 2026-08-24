@@ -23,7 +23,7 @@ from lerobot_policy_cloudedge_pi05.processor_cloudedge_pi05 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 ALIGNED_BASE_DIR = ROOT / "artifacts/pi05_libero_base_official_aligned"
-BOOTSTRAP_DIR = ROOT / "artifacts/cloudedge_pi05_bootstrap_official_aligned"
+BOOTSTRAP_DIR = ROOT / "artifacts/cloudedge_pi05_v2_bootstrap_official_aligned"
 
 
 def test_bootstrap_config_inheritance():
@@ -33,14 +33,20 @@ def test_bootstrap_config_inheritance():
     valid_fields = {k: v for k, v in base_config.items() if hasattr(CloudEdgePI05Config, k) and k != "type"}
     valid_fields.update(
         {
+            "architecture_version": 2,
+            "freeze_vision_encoder": True,
             "history_window": 21,
             "stale_loss_weight_max": 0.5,
             "stale_loss_warmup_steps": 10000,
             "eval_delay_max": 0,
+            "cloudedge_train_step": 0,
         }
     )
     config = CloudEdgePI05Config(**valid_fields)
 
+    assert config.architecture_version == 2
+    assert config.freeze_vision_encoder is True
+    assert config.cloudedge_train_step == 0
     assert config.chunk_size == 10, f"Expected chunk_size 10, got {config.chunk_size}"
     assert config.n_action_steps == 5, f"Expected n_action_steps 5, got {config.n_action_steps}"
     assert config.num_inference_steps == 10, f"Expected num_inference_steps 10, got {config.num_inference_steps}"

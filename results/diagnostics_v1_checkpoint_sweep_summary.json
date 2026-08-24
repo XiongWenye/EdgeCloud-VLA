@@ -1,0 +1,115 @@
+{
+  "suite": "libero_spatial",
+  "seed": 7,
+  "expected_steps": [
+    5000,
+    20000,
+    40000,
+    60000,
+    80000,
+    120000
+  ],
+  "expected_delays": [
+    0,
+    10
+  ],
+  "complete": true,
+  "records": [
+    {
+      "step": 5000,
+      "delay_max": 0,
+      "success_percent": 76.0,
+      "n_episodes": 50,
+      "eval_seconds": 380.9860165119171,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_005000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 5000,
+      "delay_max": 10,
+      "success_percent": 26.0,
+      "n_episodes": 50,
+      "eval_seconds": 357.84058928489685,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_005000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 20000,
+      "delay_max": 0,
+      "success_percent": 28.000000000000004,
+      "n_episodes": 50,
+      "eval_seconds": 355.2070257663727,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_020000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 20000,
+      "delay_max": 10,
+      "success_percent": 40.0,
+      "n_episodes": 50,
+      "eval_seconds": 351.7274980545044,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_020000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 40000,
+      "delay_max": 0,
+      "success_percent": 22.0,
+      "n_episodes": 50,
+      "eval_seconds": 398.6382691860199,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_040000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 40000,
+      "delay_max": 10,
+      "success_percent": 38.0,
+      "n_episodes": 50,
+      "eval_seconds": 356.89319133758545,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_040000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 60000,
+      "delay_max": 0,
+      "success_percent": 32.0,
+      "n_episodes": 50,
+      "eval_seconds": 360.3784601688385,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_060000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 60000,
+      "delay_max": 10,
+      "success_percent": 30.0,
+      "n_episodes": 50,
+      "eval_seconds": 359.60581731796265,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_060000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 80000,
+      "delay_max": 0,
+      "success_percent": 30.0,
+      "n_episodes": 50,
+      "eval_seconds": 363.2141330242157,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_080000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 80000,
+      "delay_max": 10,
+      "success_percent": 32.0,
+      "n_episodes": 50,
+      "eval_seconds": 391.21921610832214,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_080000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 120000,
+      "delay_max": 0,
+      "success_percent": 24.0,
+      "n_episodes": 50,
+      "eval_seconds": 352.8157925605774,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_120000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "step": 120000,
+      "delay_max": 10,
+      "success_percent": 40.0,
+      "n_episodes": 50,
+      "eval_seconds": 359.52595043182373,
+      "source": "results/diagnostics_v1_checkpoint_sweep/step_120000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    }
+  ]
+}
