@@ -98,6 +98,7 @@ def main() -> None:
     parity_max_abs = (base_chunk - ce_chunk).abs().max().item()
     assert parity_max_abs <= 1e-5, parity_max_abs
 
+    cloudedge.config.pretrained_path = args.bootstrap
     peft_policy = cloudedge.wrap_with_peft(
         peft_cli_overrides={"method_type": "LORA", "r": 16}
     )
