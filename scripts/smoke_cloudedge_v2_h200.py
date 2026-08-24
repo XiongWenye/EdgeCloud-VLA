@@ -171,6 +171,10 @@ def main() -> None:
 
     adapter_dir = args.output / "adapter_step_2"
     peft_policy.save_pretrained(adapter_dir)
+    # PEFT persists adapter metadata and weights only. LeRobot's checkpoint
+    # writer saves the underlying policy config separately; mirror that here
+    # so this smoke exercises the exact reload contract used by evaluation.
+    peft_policy.config.save_pretrained(adapter_dir)
     assert (adapter_dir / "adapter_model.safetensors").is_file()
     assert (adapter_dir / "adapter_config.json").is_file()
     assert (adapter_dir / "config.json").is_file()
