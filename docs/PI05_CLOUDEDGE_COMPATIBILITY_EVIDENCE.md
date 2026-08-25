@@ -213,11 +213,17 @@ V3 初筛准入标准（Spatial，seed 7，每点 100 episodes）：
 - V2 winner checkpoint:
   outputs/cloudedge_pi05_v2_lr5e-6/checkpoints/002500/pretrained_model
 - V2 full jobs: 41750775, 41750776, 41750777
-- V3 implementation commit: f96ddc2a4eb85b78b6b40ed447b67d27825b44d5
-- V3 immutable snapshot:
-  /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA-code-snapshots/f96ddc2
-- V3 jobs: bootstrap 41752244; smoke 41752247; train array 41752249;
-  candidate evaluation array 41752251; aggregation 41752252
+- V3 initial implementation commit: f96ddc2a4eb85b78b6b40ed447b67d27825b44d5
+- V3 smoke-fix experiment commit/snapshot: 5979e0cc4c0899b1197c01ac289a7328c12e5bf7;
+  /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA-code-snapshots/5979e0c
+- Initial V3 jobs: bootstrap 41752244 completed; smoke 41752247 failed only
+  because the smoke test read an empty observation deque; dependent jobs were cancelled.
+- Corrected V3 jobs: smoke 41784065 completed; train array 41784066;
+  candidate evaluation array 41784067; aggregation 41784069.
+- Corrected V3 smoke: cloud/base parity 0.0; zero-correction parity 0.0;
+  reload error 0.0; trainable 17,275,488 / 3,730,921,680 (0.463%);
+  final-head gradient 0.73776; second-step edge gradient 0.001033;
+  edge reactivity max abs 0.000916.
 - Cluster: Harvard FAS RC / Kempner H200
 - SLURM: partition=kempner_h200, account=kempner_ydu_lab
 
