@@ -200,6 +200,11 @@ V3 初筛准入标准（Spatial，seed 7，每点 100 episodes）：
 - V2 winner checkpoint:
   outputs/cloudedge_pi05_v2_lr5e-6/checkpoints/002500/pretrained_model
 - V2 full jobs: 41750775, 41750776, 41750777
+- V3 implementation commit: f96ddc2a4eb85b78b6b40ed447b67d27825b44d5
+- V3 immutable snapshot:
+  /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA-code-snapshots/f96ddc2
+- V3 jobs: bootstrap 41752244; smoke 41752247; train array 41752249;
+  candidate evaluation array 41752251; aggregation 41752252
 - Cluster: Harvard FAS RC / Kempner H200
 - SLURM: partition=kempner_h200, account=kempner_ydu_lab
 
