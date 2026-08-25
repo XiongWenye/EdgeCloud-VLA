@@ -2,9 +2,10 @@
 """Aggregate seed-matched edge-on versus edge-zero CloudEdge pi0.5 v2 results."""
 
 import json
+import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CLOUDEDGE_PROJECT_ROOT", Path(__file__).resolve().parents[1]))
 SUITES = ["libero_spatial", "libero_object", "libero_goal", "libero_10"]
 DELAYS = [0, 10, 20, 40]
 

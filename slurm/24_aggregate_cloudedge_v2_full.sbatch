@@ -21,7 +21,8 @@ python $CODE_ROOT/scripts/aggregate_cloudedge_results.py \
   --base-dir $PROJECT_ROOT/results/baseline_aligned_delayed/raw \
   --output-json $PROJECT_ROOT/results/cloudedge_pi05_v2_full_summary.json \
   --output-md $PROJECT_ROOT/results/cloudedge_pi05_v2_full_summary.md
-python $CODE_ROOT/scripts/aggregate_v2_edge_ablation.py
+CLOUDEDGE_PROJECT_ROOT=$PROJECT_ROOT \
+  python $CODE_ROOT/scripts/aggregate_v2_edge_ablation.py
 test -s $PROJECT_ROOT/results/cloudedge_pi05_v2_full_summary.json
 test -s $PROJECT_ROOT/results/cloudedge_pi05_v2_edge_ablation_summary.json
 echo CLOUDEDGE_V2_FULL_AGGREGATE_SUCCESS=true

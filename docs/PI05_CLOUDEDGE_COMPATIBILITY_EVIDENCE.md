@@ -100,18 +100,31 @@ H200 smoke 已验证：
 2. 继续训练导致 d0 严重退化，因此不能照搬论文的 120k steps。
 3. 这与“flow 内 residual 反复累积”及“π0.5 对 action expert 微调敏感”相符，但目前仍是机制假设，不是已证明的唯一因果解释。
 
-### 5.3 V2 全量与 edge-zero 消融（运行中）
+### 5.3 V2 全量与 edge-zero 消融（已完成）
 
-- Full: 4 suites × dmax={0,10,20,40} × seeds={7,8,9} × 500 episodes，job array 41750775。
-- Edge-zero: 4 suites × 4 delays × seed 7 × 500 episodes，job array 41750776。
-- Aggregation: job 41750777，依赖上述任务成功完成。
+Full evaluation 包含 4 suites × dmax={0,10,20,40} × seeds={7,8,9} × 500 episodes。四套件 macro 结果：
 
-edge-zero 消融用于区分：
+| dmax | Delayed base（seed 7） | V2 CloudEdge（3 seeds） | 差值 |
+|---:|---:|---:|---:|
+| 0 | 96.25% | 93.83±0.15% | -2.42 pp |
+| 10 | 41.90% | 53.93±1.63% | +12.03 pp |
+| 20 | 8.20% | 12.50±0.18% | +4.30 pp |
+| 40 | 2.10% | 2.35±0.48% | +0.25 pp |
 
-- “当前边缘图像确实贡献了增益”；
-- “增益主要来自 stale training 对 cloud backbone/head 的正则化”。
+Delay AUC 从 26.11% 提高到 30.49%，但 d40 retention 仅从 2.18% 提高到 2.50%，远低于论文报告的 76.5%。V2 在中等延迟有可重复收益，但不能复制论文的大延迟鲁棒性。
 
-若 edge-on 与 edge-zero 接近，则不能把延迟鲁棒性归因于在线边缘视觉纠偏。
+Seed-matched edge-zero 消融（seed 7，500 episodes/suite/point）的 macro 结果：
+
+| dmax | Edge on | Edge zero | 当前边缘特征贡献 |
+|---:|---:|---:|---:|
+| 0 | 94.00% | 91.65% | +2.35 pp |
+| 10 | 52.60% | 47.85% | +4.75 pp |
+| 20 | 12.45% | 11.30% | +1.15 pp |
+| 40 | 2.30% | 1.55% | +0.75 pp |
+
+贡献高度依赖 suite：LIBERO-10 d10 为 +18.2 pp，但 Spatial d10 为 -1.0 pp、Goal d10 为 -2.8 pp。当前边缘视觉不是完全无效，却也不是统一稳定的 rescue 机制。d10 的一部分收益来自边缘特征，另一部分与 stale training、动作头变化及 suite 特性有关。
+
+聚合 job 41750777 在写出 full summary 后因代码快照路径解析错误退出；64 个 GPU evaluation tasks 和全部原始结果均成功。路径问题已经修复，edge-ablation summary 已从原始结果重新生成。
 
 ## 6. V3：针对 π0.5 的最小结构改动
 

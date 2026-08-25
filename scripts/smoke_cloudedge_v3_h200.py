@@ -191,9 +191,7 @@ def main() -> None:
     peft_policy.eval()
     peft_policy.reset()
     with torch.no_grad():
-        before_reload = peft_policy.predict_action_chunk(
-            processed, noise=noise.clone(), record_observation=False
-        )
+        before_reload = peft_policy.predict_action_chunk(processed, noise=noise.clone())
     adapter_dir = args.output / "adapter_step_2"
     peft_policy.save_pretrained(adapter_dir)
     peft_policy.config.save_pretrained(adapter_dir)
@@ -206,9 +204,7 @@ def main() -> None:
     reloaded.to(device).eval()
     reloaded.reset()
     with torch.no_grad():
-        after_reload = reloaded.predict_action_chunk(
-            processed, noise=noise.clone(), record_observation=False
-        )
+        after_reload = reloaded.predict_action_chunk(processed, noise=noise.clone())
     reload_max_abs = (before_reload - after_reload).abs().max().item()
     assert reload_max_abs <= 1e-5, reload_max_abs
 
