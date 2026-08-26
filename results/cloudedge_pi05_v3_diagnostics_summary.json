@@ -1,0 +1,22 @@
+{
+  "protocol": "LIBERO Spatial, seed 7, 100 episodes/point, n_action_steps=1",
+  "trained_checkpoint": "v3 lr2e-6 step625",
+  "rows": [
+    {
+      "delay_max": 0,
+      "bootstrap_h1_success_percent": 97.0,
+      "trained_edge_on_success_percent": 96.0,
+      "trained_edge_zero_success_percent": 92.0,
+      "training_gain_points": -1.0,
+      "edge_feature_contribution_points": 4.0
+    },
+    {
+      "delay_max": 10,
+      "bootstrap_h1_success_percent": 24.0,
+      "trained_edge_on_success_percent": 28.999999999999996,
+      "trained_edge_zero_success_percent": 25.0,
+      "training_gain_points": 4.9999999999999964,
+      "edge_feature_contribution_points": 3.9999999999999964
+    }
+  ]
+}

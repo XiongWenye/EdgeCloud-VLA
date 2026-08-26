@@ -1,0 +1,161 @@
+{
+  "complete": true,
+  "d0_threshold": 85.0,
+  "d10_threshold": 30.0,
+  "records": [
+    {
+      "candidate": "lr1e-5",
+      "step": 2500,
+      "delay_max": 0,
+      "success_percent": 88.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_002500/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 2500,
+      "delay_max": 10,
+      "success_percent": 37.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_002500/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 5000,
+      "delay_max": 0,
+      "success_percent": 53.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_005000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 5000,
+      "delay_max": 10,
+      "success_percent": 40.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_005000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 10000,
+      "delay_max": 0,
+      "success_percent": 45.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_010000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 10000,
+      "delay_max": 10,
+      "success_percent": 39.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr1e-5/step_010000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 2500,
+      "delay_max": 0,
+      "success_percent": 97.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_002500/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 2500,
+      "delay_max": 10,
+      "success_percent": 45.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_002500/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 5000,
+      "delay_max": 0,
+      "success_percent": 72.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_005000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 5000,
+      "delay_max": 10,
+      "success_percent": 45.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_005000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 10000,
+      "delay_max": 0,
+      "success_percent": 51.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_010000/dmax_0/libero_spatial/seed_7/eval_info.json"
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 10000,
+      "delay_max": 10,
+      "success_percent": 54.0,
+      "n_episodes": 100,
+      "source": "results/cloudedge_pi05_v2_candidates/lr5e-6/step_010000/dmax_10/libero_spatial/seed_7/eval_info.json"
+    }
+  ],
+  "candidate_gates": [
+    {
+      "candidate": "lr5e-6",
+      "step": 2500,
+      "d0_success_percent": 97.0,
+      "d10_success_percent": 45.0,
+      "admitted": true,
+      "selection_score": 142.0
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 5000,
+      "d0_success_percent": 72.0,
+      "d10_success_percent": 45.0,
+      "admitted": false,
+      "selection_score": 117.0
+    },
+    {
+      "candidate": "lr5e-6",
+      "step": 10000,
+      "d0_success_percent": 51.0,
+      "d10_success_percent": 54.0,
+      "admitted": false,
+      "selection_score": 105.0
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 2500,
+      "d0_success_percent": 88.0,
+      "d10_success_percent": 37.0,
+      "admitted": true,
+      "selection_score": 125.0
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 5000,
+      "d0_success_percent": 53.0,
+      "d10_success_percent": 40.0,
+      "admitted": false,
+      "selection_score": 93.0
+    },
+    {
+      "candidate": "lr1e-5",
+      "step": 10000,
+      "d0_success_percent": 45.0,
+      "d10_success_percent": 39.0,
+      "admitted": false,
+      "selection_score": 84.0
+    }
+  ],
+  "winner": {
+    "candidate": "lr5e-6",
+    "step": 2500,
+    "d0_success_percent": 97.0,
+    "d10_success_percent": 45.0,
+    "admitted": true,
+    "selection_score": 142.0
+  }
+}
