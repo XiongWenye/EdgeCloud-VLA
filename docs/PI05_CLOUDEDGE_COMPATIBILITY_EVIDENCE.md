@@ -143,6 +143,20 @@ V3 不再把 edge residual 放入 flow vector field，而采用 cloud plan + pos
 8. 候选仅训练 2,500 steps，保存 625/1,250/2,500 checkpoints，避免已观测到的长训坍塌。
 
 V3 是针对 π0.5 的方法改造，不应被表述为论文原方法的逐字复现。
+### 6.1 V3 候选结果
+
+LIBERO Spatial、seed 7、每点 100 episodes：
+
+| Candidate | Step | d0 | d10 | 预注册准入 |
+|---|---:|---:|---:|:---:|
+| lr=2e-6 | 625 | 96% | 29% | no |
+| lr=2e-6 | 1,250 | 96% | 25% | no |
+| lr=2e-6 | 2,500 | 96% | 23% | no |
+| lr=5e-6 | 625 | 95% | 22% | no |
+| lr=5e-6 | 1,250 | 92% | 19% | no |
+| lr=5e-6 | 2,500 | 96% | 24% | no |
+
+所有候选均未达到 d0>=94%、d10>=46% 的联合门槛。V3 大多保留了 d0，但 d10 在最早 checkpoint 已明显低于 V2，并随 lr=2e-6 的训练从 29% 降到 23%。这支持“post-flow correction 没有获得论文所需的 stale-cloud rescue 表征”，但还不能单独证明训练造成负增益，因为需要与未训练、相同 action horizon=1 的 bootstrap 对照。该 horizon-matched control 与最佳 checkpoint edge-zero 消融被列为最终诊断。
 
 ## 7. 明确的可证伪假设
 
