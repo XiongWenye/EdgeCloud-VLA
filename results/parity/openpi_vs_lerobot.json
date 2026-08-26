@@ -1,0 +1,224 @@
+{
+  "protocol": {
+    "openpi_horizon": 10,
+    "openpi_execute": 5,
+    "lerobot_aligned_horizon": 10,
+    "lerobot_aligned_execute": 5,
+    "lerobot_artifact_n_action_steps": 5,
+    "lerobot_artifact_chunk_size": 10,
+    "flow_steps": 10,
+    "flow_dt": -0.10000000149011612,
+    "openpi_trace_compilation_max_abs": 0.001953125
+  },
+  "observations": {
+    "base_image": {
+      "shape": [
+        3,
+        224,
+        224
+      ],
+      "mae": 7.785452833893348e-08,
+      "rmse": 8.941581006655065e-08,
+      "max_abs": 1.1920928955078125e-07,
+      "cosine": 1.0000000000000087
+    },
+    "wrist_image": {
+      "shape": [
+        3,
+        224,
+        224
+      ],
+      "mae": 7.694854787519189e-08,
+      "rmse": 9.314936181572392e-08,
+      "max_abs": 1.1920928955078125e-07,
+      "cosine": 1.0000000000000036
+    },
+    "openpi_masks": [
+      true,
+      true,
+      false
+    ],
+    "lerobot_masks": [
+      true,
+      true,
+      false
+    ],
+    "raw_state": [
+      -0.21124163269996643,
+      -0.011090601794421673,
+      1.174249529838562,
+      3.140895366668701,
+      -0.00284781982190907,
+      -0.08773931115865707,
+      0.03872336447238922,
+      -0.0387222021818161
+    ],
+    "normalized_state": {
+      "shape": [
+        8
+      ],
+      "mae": 5.4572181731882274e-08,
+      "rmse": 7.28668329282651e-08,
+      "max_abs": 1.6702040173122157e-07,
+      "cosine": 0.9999999999999956
+    }
+  },
+  "tokens": {
+    "openpi_prompt": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+    "lerobot_aligned_prompt": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+    "openpi_valid_count": 20,
+    "lerobot_aligned_valid_count": 20,
+    "valid_ids_equal": true,
+    "openpi_valid_ids": [
+      2,
+      18075,
+      908,
+      573,
+      2656,
+      14581,
+      1865,
+      573,
+      8811,
+      578,
+      573,
+      117064,
+      4074,
+      578,
+      2040,
+      665,
+      611,
+      573,
+      8811,
+      108
+    ],
+    "lerobot_aligned_valid_ids": [
+      2,
+      18075,
+      908,
+      573,
+      2656,
+      14581,
+      1865,
+      573,
+      8811,
+      578,
+      573,
+      117064,
+      4074,
+      578,
+      2040,
+      665,
+      611,
+      573,
+      8811,
+      108
+    ]
+  },
+  "normalization": {
+    "q01": [
+      -0.7473750114440918,
+      -0.7961249947547913,
+      -0.9375,
+      -0.11580300331115723,
+      -0.1694297194480896,
+      -0.19450220465660095,
+      -1.0
+    ],
+    "q99": [
+      0.937125027179718,
+      0.859499990940094,
+      0.937125027179718,
+      0.14022600650787354,
+      0.18103542923927307,
+      0.311545729637146,
+      0.9995999932289124
+    ],
+    "openpi_epsilon": 1e-06,
+    "action_formula_delta": {
+      "shape": [
+        10,
+        7
+      ],
+      "mae": 0.0,
+      "rmse": 0.0,
+      "max_abs": 0.0,
+      "cosine": 1.0
+    }
+  },
+  "flow_matching": {
+    "aligned_velocity": {
+      "shape": [
+        10,
+        10,
+        32
+      ],
+      "mae": 0.005616818348607921,
+      "rmse": 0.007741649505255958,
+      "max_abs": 0.0576777458190918,
+      "cosine": 0.9999733682492594
+    },
+    "aligned_state": {
+      "shape": [
+        11,
+        10,
+        32
+      ],
+      "mae": 0.0009890184351041336,
+      "rmse": 0.0014420253350481838,
+      "max_abs": 0.009036540985107422,
+      "cosine": 0.9999973120788133
+    },
+    "aligned_final": {
+      "shape": [
+        10,
+        32
+      ],
+      "mae": 0.0008537545682884229,
+      "rmse": 0.0012547648955396793,
+      "max_abs": 0.005715608596801758,
+      "cosine": 0.9999861664043878
+    },
+    "saved_first10": {
+      "shape": [
+        10,
+        32
+      ],
+      "mae": 0.03401496341575694,
+      "rmse": 0.10347034019747847,
+      "max_abs": 0.719133660197258,
+      "cosine": 0.9058508078512482
+    }
+  },
+  "executed_actions": {
+    "aligned_executed": {
+      "shape": [
+        5,
+        7
+      ],
+      "mae": 0.0014773321185774656,
+      "rmse": 0.002023167243816139,
+      "max_abs": 0.0048138884545566585,
+      "cosine": 0.9999880956989673
+    },
+    "aligned_exact_unnorm": {
+      "shape": [
+        5,
+        7
+      ],
+      "mae": 0.0014773321185774656,
+      "rmse": 0.002023167243816139,
+      "max_abs": 0.0048138884545566585,
+      "cosine": 0.9999880956989673
+    },
+    "saved_conversion": {
+      "shape": [
+        5,
+        7
+      ],
+      "mae": 0.079629202425377,
+      "rmse": 0.1316017417653403,
+      "max_abs": 0.4961472364424465,
+      "cosine": 0.9492018658247382
+    }
+  }
+}

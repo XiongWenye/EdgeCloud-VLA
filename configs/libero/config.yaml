@@ -1,0 +1,5 @@
+assets: /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/cache/libero/assets
+bddl_files: /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/.venv/lib/python3.10/site-packages/libero/libero/bddl_files
+benchmark_root: /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/.venv/lib/python3.10/site-packages/libero/libero
+datasets: /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/cache/lerobot/lerobot/libero
+init_states: /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA/.venv/lib/python3.10/site-packages/libero/libero/init_files

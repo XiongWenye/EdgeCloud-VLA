@@ -1,18 +1,35 @@
 {
-  "experiment": "cloudedge_pi05_libero",
+  "experiment": "cloudedge_pi05_libero_aligned",
   "paper": "Peng et al., arXiv:2608.00569v1",
   "code": {
     "lerobot_version": "0.4.4",
-    "lerobot_commit": "8fff0fde7c79f23a93d845d1a50e985de01f8b8a"
+    "lerobot_commit": "8fff0fde7c79f23a93d845d1a50e985de01f8b8a",
+    "alignment_patch": "patches/0001-align-lerobot-pi05-with-openpi-libero.patch"
   },
   "artifacts": {
-    "base_model": "lerobot/pi05_libero_base",
-    "base_model_revision": "a217bfd3b14673cf2ce597e69997ab21866438dd",
+    "base_model": "artifacts/pi05_libero_base_official_aligned",
+    "base_macro_success_rate": 96.90,
+    "bootstrap_model": "artifacts/cloudedge_pi05_bootstrap_official_aligned",
     "edge_encoder": "google/siglip-base-patch16-224",
     "edge_encoder_revision": "7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed",
     "dataset": "lerobot/libero",
     "dataset_revision": "a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4",
-    "final_model": "wxiong/pi05-cloudedge-libero"
+    "output_checkpoint_dir": "outputs/cloudedge_pi05_libero_aligned_120k"
+  },
+  "protocol": {
+    "chunk_size": 10,
+    "n_action_steps": 5,
+    "num_inference_steps": 10,
+    "max_action_dim": 32,
+    "max_state_dim": 32,
+    "normalization_mapping": {
+      "ACTION": "OPENPI_QUANTILES",
+      "STATE": "OPENPI_QUANTILES",
+      "VISUAL": "IDENTITY"
+    },
+    "tokenizer": "local paligemma_tokenizer.model (20 valid tokens, no state in prompt)",
+    "empty_cameras": 1,
+    "image_resolution": [224, 224]
   },
   "training": {
     "steps": 120000,
@@ -22,28 +39,49 @@
     "stale_loss_warmup_steps": 10000,
     "loss": "dual-path conditional flow-matching MSE with shared noise and time",
     "global_batch_size": 8,
+    "per_gpu_batch_size": 2,
+    "num_gpus": 4,
     "seed": 7,
     "precision": "bfloat16",
-    "gradient_checkpointing": true,
+    "learning_rate": 2.5e-05,
+    "lr_warmup_steps": 1000,
+    "lr_decay_steps": 30000,
+    "lr_decay_floor": 2.5e-06,
+    "save_interval": 5000,
+    "gradient_checkpointing": false,
     "frozen_cloud_vision_encoder": true,
-    "frozen_edge_vision_encoder": true
+    "frozen_edge_vision_encoder": true,
+    "train_expert_only": false
   },
   "evaluation": {
-    "suites": ["libero_spatial", "libero_object", "libero_goal", "libero_10"],
-    "delay_max_steps": [0, 10, 20, 40],
+    "suites": [
+      "libero_spatial",
+      "libero_object",
+      "libero_goal",
+      "libero_10"
+    ],
+    "core_delay_max_steps": [0, 10, 20, 40],
+    "full_delay_max_steps": [0, 5, 10, 15, 20, 25, 30, 40],
     "delay_distribution_nonzero": "Uniform({1,...,d_max})",
     "trials_per_task": 50,
     "cloudedge_seeds": [7, 8, 9],
     "baseline_seeds": [7],
-    "n_action_steps": 1,
-    "hard_reset": true
+    "chunk_size": 10,
+    "n_action_steps": 5,
+    "flow_steps": 10,
+    "wait_steps": 10,
+    "max_steps": {
+      "libero_spatial": 220,
+      "libero_object": 280,
+      "libero_goal": 300,
+      "libero_10": 520
+    }
   },
   "declared_assumptions": [
     "The paper does not report lambda_max; this reproduction uses 0.5.",
     "The paper does not report curriculum duration; this reproduction uses 10000 optimizer steps.",
     "The paper does not report its optimizer, batch size, or exact base checkpoint revision.",
     "Pi0.5 flow matching replaces L1 action regression; both paths predict the same sampled velocity target.",
-    "Closed-loop evaluation executes one action before replanning so current edge vision is consumed every environment step."
+    "Closed-loop evaluation predicts 10-action chunks and executes 5 actions before replanning matching official OpenPI protocol."
   ]
 }
-

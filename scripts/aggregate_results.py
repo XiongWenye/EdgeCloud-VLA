@@ -40,9 +40,9 @@ def main():
             continue
         with path.open() as handle:
             payload = json.load(handle)
+        # LeRobot's eval_info.json stores overall.pc_success in percentage
+        # points, including values below 1 (for example, 0.6 means 0.6%).
         success = float(payload["overall"]["pc_success"])
-        if success <= 1.0:
-            success *= 100.0
         row = match.groupdict()
         row["delay"] = int(row["delay"])
         row["seed"] = int(row["seed"])

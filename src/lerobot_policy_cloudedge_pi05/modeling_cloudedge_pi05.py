@@ -30,6 +30,33 @@ class CloudContext:
     past_key_values: Any
 
 
+class EdgeResidualActionHead(nn.Module):
+    """Paper-style residual action head adapted to pi0.5 flow velocity."""
+
+    def __init__(self, edge_width: int, expert_width: int, action_dim: int):
+        super().__init__()
+        self.edge_norm = nn.LayerNorm(edge_width)
+        self.cloud_norm = nn.LayerNorm(expert_width)
+        self.edge_projection = nn.Linear(edge_width, expert_width)
+        self.fusion = nn.Sequential(
+            nn.Linear(2 * expert_width, expert_width),
+            nn.SiLU(),
+            nn.Linear(expert_width, action_dim),
+        )
+
+        # Preserve the aligned pi0.5 flow field exactly at initialization while
+        # keeping the upstream edge path non-zero and trainable.
+        nn.init.zeros_(self.fusion[-1].weight)
+        nn.init.zeros_(self.fusion[-1].bias)
+
+    def forward(self, cloud_features: Tensor, edge_features: Tensor) -> Tensor:
+        cloud = self.cloud_norm(cloud_features.to(dtype=torch.float32))
+        edge = self.edge_norm(edge_features.to(dtype=torch.float32))
+        edge = F.silu(self.edge_projection(edge))
+        edge = edge[:, None, :].expand(-1, cloud.shape[1], -1)
+        return self.fusion(torch.cat([cloud, edge], dim=-1))
+
+
 class CloudEdgePI05Pytorch(PI05Pytorch):
     """pi0.5 flow model with a frozen current-image edge condition."""
 
@@ -45,16 +72,11 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
 
         expert_width = self.action_in_proj.out_features
         edge_width = self.edge_vision.config.hidden_size
-        self.edge_projection = nn.Sequential(
-            nn.Linear(edge_width, expert_width),
-            nn.SiLU(),
-            nn.Linear(expert_width, expert_width),
+        self.edge_action_head = EdgeResidualActionHead(
+            edge_width=edge_width,
+            expert_width=expert_width,
+            action_dim=config.max_action_dim,
         )
-        # Preserve the pretrained pi0.5 flow field at initialization.
-        nn.init.zeros_(self.edge_projection[-1].weight)
-        nn.init.zeros_(self.edge_projection[-1].bias)
-
-        self.register_buffer("cloudedge_train_step", torch.zeros((), dtype=torch.long), persistent=True)
 
     def train(self, mode: bool = True):
         super().train(mode)
@@ -63,7 +85,12 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
 
     def encode_edge_images(self, images: list[Tensor], img_masks: list[Tensor]) -> Tensor | None:
         if not self.config.use_edge_vision:
-            return None
+            return torch.zeros(
+                images[0].shape[0],
+                self.edge_vision.config.hidden_size,
+                dtype=torch.float32,
+                device=images[0].device,
+            )
         pooled_views = []
         with torch.no_grad():
             for image in images:
@@ -73,13 +100,13 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
         valid = torch.stack(img_masks, dim=1).to(dtype=pooled.dtype)
         denom = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
         pooled = (pooled * valid.unsqueeze(-1)).sum(dim=1) / denom
-        return self.edge_projection(pooled)
+        return pooled
 
-    def embed_suffix(self, noisy_actions, timestep, edge_context: Tensor | None = None):
-        embs, pad_masks, att_masks, adarms_cond = super().embed_suffix(noisy_actions, timestep)
+    def _predict_velocity(self, cloud_features: Tensor, edge_context: Tensor | None) -> Tensor:
+        velocity = self.action_out_proj(cloud_features.to(dtype=torch.float32))
         if edge_context is not None:
-            embs = embs + edge_context[:, None, :].to(dtype=embs.dtype)
-        return embs, pad_masks, att_masks, adarms_cond
+            velocity = velocity + self.edge_action_head(cloud_features, edge_context)
+        return velocity
 
     def forward(
         self,
@@ -102,9 +129,7 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
         u_t = noise - actions
 
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, tokens, masks)
-        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(
-            x_t, time, edge_context
-        )
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = super().embed_suffix(x_t, time)
         if (
             self.paligemma_with_expert.paligemma.language_model.layers[0].self_attn.q_proj.weight.dtype
             == torch.bfloat16
@@ -132,8 +157,8 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
             forward_func, prefix_embs, suffix_embs, attention, position_ids, adarms_cond
         )
         suffix_out = suffix_out[:, -self.config.chunk_size :].to(dtype=torch.float32)
-        v_t = self._apply_checkpoint(self.action_out_proj, suffix_out)
-        return F.mse_loss(u_t, v_t, reduction="none")
+        velocity = self._predict_velocity(suffix_out, edge_context)
+        return F.mse_loss(u_t, velocity, reduction="none")
 
     def encode_cloud_context(self, images, img_masks, tokens, masks) -> CloudContext:
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, tokens, masks)
@@ -158,9 +183,7 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
         timestep: Tensor,
         edge_context: Tensor | None,
     ) -> Tensor:
-        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(
-            x_t, timestep, edge_context
-        )
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = super().embed_suffix(x_t, timestep)
         prefix_pad_masks = cloud_context.prefix_pad_masks
         suffix_len = suffix_pad_masks.shape[1]
         batch_size = prefix_pad_masks.shape[0]
@@ -184,7 +207,8 @@ class CloudEdgePI05Pytorch(PI05Pytorch):
             use_cache=False,
             adarms_cond=[None, adarms_cond],
         )
-        return self.action_out_proj(outputs[1][:, -self.config.chunk_size :].to(dtype=torch.float32))
+        cloud_features = outputs[1][:, -self.config.chunk_size :].to(dtype=torch.float32)
+        return self._predict_velocity(cloud_features, edge_context)
 
     @torch.no_grad()
     def sample_actions_from_context(
@@ -230,6 +254,29 @@ class CloudEdgePI05Policy(PI05Policy):
         self.model.to(config.device)
         self.reset()
 
+    def _get_default_peft_targets(self) -> dict[str, Any]:
+        """LoRA cloud/planning layers; fully train only pi0.5 projections and edge head."""
+        target_modules = (
+            r"model\.paligemma_with_expert\."
+            r"(paligemma\.model\.language_model|gemma_expert\.model)\."
+            r"layers\.\d+\."
+            r"(self_attn\.(q|k|v|o)_proj|mlp\.(gate|up|down)_proj)"
+        )
+        return {
+            "target_modules": target_modules,
+            "modules_to_save": [
+                "action_in_proj",
+                "action_out_proj",
+                "time_mlp_in",
+                "time_mlp_out",
+                "edge_action_head",
+            ],
+            "r": 16,
+            "lora_alpha": 16,
+            "lora_dropout": 0.0,
+            "bias": "none",
+        }
+
     def reset(self):
         super().reset()
         capacity = max(self.config.history_window, self.config.eval_delay_max + 1)
@@ -264,13 +311,19 @@ class CloudEdgePI05Policy(PI05Policy):
         stale_images, stale_masks = super()._preprocess_images(stale_batch)
         return current_images, current_masks, stale_images, stale_masks, delay
 
-    def _inference_image_views(self, batch: dict[str, Tensor]):
+    def _record_inference_observation(self, batch: dict[str, Tensor]) -> None:
         current_raw = {
             key: batch[key].detach().clone()
             for key in self.config.image_features
             if key in batch
         }
         self._observation_history.append(current_raw)
+
+    def _inference_image_views(
+        self, batch: dict[str, Tensor], *, record_observation: bool = True
+    ):
+        if record_observation:
+            self._record_inference_observation(batch)
         if self.config.eval_delay_max == 0:
             delay = 0
         else:
@@ -288,8 +341,7 @@ class CloudEdgePI05Policy(PI05Policy):
         warmup = self.config.stale_loss_warmup_steps
         if warmup == 0:
             return maximum
-        step = int(self.model.cloudedge_train_step.item())
-        return maximum * min(1.0, step / warmup)
+        return maximum * min(1.0, self.config.cloudedge_train_step / warmup)
 
     def forward(self, batch: dict[str, Tensor], reduction: str = "mean"):
         current_images, current_masks, stale_images, stale_masks, delay = self._training_image_views(batch)
@@ -326,7 +378,7 @@ class CloudEdgePI05Policy(PI05Policy):
         stale = stale[:, :, :action_dim]
         stale_weight = self._stale_weight()
         losses = (1.0 - stale_weight) * fresh + stale_weight * stale
-        self.model.cloudedge_train_step.add_(1)
+        self.config.cloudedge_train_step += 1
 
         per_sample = losses.mean(dim=(1, 2))
         output = {
@@ -342,9 +394,32 @@ class CloudEdgePI05Policy(PI05Policy):
         return per_sample.mean(), output
 
     @torch.no_grad()
-    def predict_action_chunk(self, batch: dict[str, Tensor], **kwargs) -> Tensor:
+    def select_action(self, batch: dict[str, Tensor]) -> Tensor:
+        """Execute an action chunk while retaining one observation per environment step."""
+        assert not self._rtc_enabled(), (
+            "RTC is not supported for select_action, use it with predict_action_chunk"
+        )
         self.eval()
-        current_images, current_masks, stale_images, stale_masks, _ = self._inference_image_views(batch)
+
+        # The evaluator calls select_action at every environment step. Record every
+        # observation even while executing a queued action chunk so eval_delay_max
+        # remains measured in environment steps, not action chunks.
+        self._record_inference_observation(batch)
+        if len(self._action_queue) == 0:
+            actions = self.predict_action_chunk(batch, record_observation=False)[
+                :, : self.config.n_action_steps
+            ]
+            self._action_queue.extend(actions.transpose(0, 1))
+        return self._action_queue.popleft()
+
+    @torch.no_grad()
+    def predict_action_chunk(
+        self, batch: dict[str, Tensor], *, record_observation: bool = True, **kwargs
+    ) -> Tensor:
+        self.eval()
+        current_images, current_masks, stale_images, stale_masks, _ = self._inference_image_views(
+            batch, record_observation=record_observation
+        )
         tokens = batch[OBS_LANGUAGE_TOKENS]
         masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
         edge_context = self.model.encode_edge_images(current_images, current_masks)
