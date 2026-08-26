@@ -143,6 +143,7 @@ V3 不再把 edge residual 放入 flow vector field，而采用 cloud plan + pos
 8. 候选仅训练 2,500 steps，保存 625/1,250/2,500 checkpoints，避免已观测到的长训坍塌。
 
 V3 是针对 π0.5 的方法改造，不应被表述为论文原方法的逐字复现。
+
 ### 6.1 V3 候选结果
 
 LIBERO Spatial、seed 7、每点 100 episodes：
@@ -156,7 +157,18 @@ LIBERO Spatial、seed 7、每点 100 episodes：
 | lr=5e-6 | 1,250 | 92% | 19% | no |
 | lr=5e-6 | 2,500 | 96% | 24% | no |
 
-所有候选均未达到 d0>=94%、d10>=46% 的联合门槛。V3 大多保留了 d0，但 d10 在最早 checkpoint 已明显低于 V2，并随 lr=2e-6 的训练从 29% 降到 23%。这支持“post-flow correction 没有获得论文所需的 stale-cloud rescue 表征”，但还不能单独证明训练造成负增益，因为需要与未训练、相同 action horizon=1 的 bootstrap 对照。该 horizon-matched control 与最佳 checkpoint edge-zero 消融被列为最终诊断。
+所有候选均未达到 d0>=94%、d10>=46% 的联合门槛。V3 大多保留了 d0，但 d10 在最早 checkpoint 已明显低于 V2，并随 lr=2e-6 的训练从 29% 降到 23%。
+
+最终 horizon-matched 诊断（Spatial、seed 7、100 episodes/point、action horizon=1）：
+
+| dmax | 未训练 bootstrap | 最佳 V3 edge-on | 最佳 V3 edge-zero | 训练总收益 | 当前 edge 贡献 |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 97% | 96% | 92% | -1 pp | +4 pp |
+| 10 | 24% | 29% | 25% | +5 pp | +4 pp |
+
+因此 post-flow correction 不是完全无效：训练在 d10 提供 +5 pp，当前边缘特征本身提供约 +4 pp。可是该增益只把 horizon=1 的性能从 24% 恢复到 29%，没有超过原始 horizon=5 delayed base 的 30%，更未达到 V2 的 45% 和预注册的 46%。edge-zero 的 d0=92% 也表明 LoRA/动作路径训练会损害基线，而 edge 分支主要起到部分恢复作用。
+
+单 seed、100 episodes 下的 4–5 pp 差异仍有抽样不确定性，不能单独宣称精确效应量；但“未达到预注册门槛”以及“远低于论文级延迟鲁棒性”的结论不依赖该小差异是否显著。
 
 ## 7. 明确的可证伪假设
 
@@ -218,6 +230,29 @@ V3 初筛准入标准（Spatial，seed 7，每点 100 episodes）：
 > π0.5 不适合云边协同，或 flow matching 天然无法容忍延迟。
 
 后者需要更多架构、数据集、机器人平台与替代分割位置的证据。
+### 8.1 本轮最终证据等级
+
+已得到的直接实验结论：
+
+1. 对齐后的 π0.5 base 本身正确，失败不能归因于 checkpoint、归一化或 evaluator 错位。
+2. V2 的 flow 内 residual 在 d10 有收益，但牺牲 d0，且 d40 几乎无效。
+3. V3 的 flow 后 correction 保留 d0，并证明 current edge 有因果贡献，但收益太小，所有候选均未达到预注册门槛。
+4. action horizon=1 本身把 Spatial d10 从原 horizon=5 base 的 30% 降到 24%；V3 训练仅恢复到 29%，说明 per-step grounding 的计算/时序代价没有换来净鲁棒性。
+5. 两个 learning rates、三个 early checkpoints 的一致失败排除了“只选错单个训练时长”的简单解释。
+
+因此可以写入论文的结论是：
+
+> 在已对齐的 π0.5 LIBERO 实现上，CloudEdgeVLA 为 OpenVLA-OFT 设计的 representational-specialization 方法不能直接迁移。Flow 内注入与 flow 后纠偏分别表现出稳定性—纠偏能力的冲突，均无法复制论文的大延迟鲁棒性。
+
+以下机制是与实验一致的解释，但尚未被单独因果证明：
+
+- π0.5 action-expert hidden state 受 flow time/noise 条件化，不等价于稳定的 OpenVLA action-token representation；
+- residual 在 vector field 内被多步积分，容易放大并损伤 d0；
+- post-flow head 的训练代理来自随机 flow time，而推理输入来自完整 ODE 终点，存在表征分布差异；
+- chunk execution 与每步 current-edge grounding 的时间语义冲突；
+- 论文收益主要依赖的 backbone stability/head attenuation 可能是 OpenVLA-OFT 特定现象，而不是可直接移植的 edge feature fusion。
+
+尚未完成 V3 的多 seed、stale-edge 和 shuffled-edge 消融。因此本文档不支持“π0.5 或 flow matching 天然不适合云边协同”的普遍断言；它支持的是“论文的现有方法不能直接用于 π0.5，需要为 flow trajectory 与异步执行重新设计训练目标和分割接口”。
 
 ## 9. 可复现性记录
 
@@ -238,6 +273,10 @@ V3 初筛准入标准（Spatial，seed 7，每点 100 episodes）：
   reload error 0.0; trainable 17,275,488 / 3,730,921,680 (0.463%);
   final-head gradient 0.73776; second-step edge gradient 0.001033;
   edge reactivity max abs 0.000916.
+- V3 horizon-matched diagnostic commit/snapshot: 04712d0176e9cf0933b8cd95499b2e17df6b4c24;
+  /n/netscratch/ydu_lab/Lab/wxiong/EdgeCloud-VLA-code-snapshots/04712d0
+- V3 diagnostic jobs: evaluation array 41898860; aggregation 41898861.
+- V3 diagnostic result: bootstrap h1 97/24; trained edge-on 96/29; trained edge-zero 92/25 (d0/d10, percent).
 - Cluster: Harvard FAS RC / Kempner H200
 - SLURM: partition=kempner_h200, account=kempner_ydu_lab
 
